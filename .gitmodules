@@ -1,0 +1,3 @@
+[submodule "thirdparty/ecs"]
+	path = thirdparty/ecs
+	url = git@github.com:annell/ecs.git
