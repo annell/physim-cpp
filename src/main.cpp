@@ -51,7 +51,6 @@ int main() {
     nrPoints.setPosition(10, 50);
 
     sf::Clock clock;
-    int i = 0;
     float timer = 0;
     auto fps = std::to_string(1);
     while (sfmlWin.isOpen()) {
@@ -59,9 +58,8 @@ int main() {
         float dt = clock.restart().asSeconds();
         timer += dt;
         if (timer > 0.08f) {
-            if (i < 100) {
+            if (ecs.Size() < 100) {
                 AddCircle(ecs, worldBoundrarys);
-                i++;
             }
             timer = 0;
             fps = std::to_string(1 / dt);
@@ -83,12 +81,21 @@ int main() {
         }
 
         {
+            BoundraryCollisionSystem::Config config{
+                    .Ecs=ecs,
+                    .worldBoundrarys=worldBoundrarys
+            };
+            BoundraryCollisionSystem::Run(config);
+        }
+
+        {
             RenderSystem::Config config{
                     .FpsText=fps,
                     .Window=sfmlWin,
                     .fpsText=fpsText,
                     .nrPoints=nrPoints,
-                    .Ecs=ecs
+                    .Ecs=ecs,
+                    .worldBoundrarys=worldBoundrarys
             };
 
             RenderSystem::Run(config);

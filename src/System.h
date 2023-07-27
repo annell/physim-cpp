@@ -23,6 +23,17 @@ public:
         sf::Text &fpsText;
         sf::Text &nrPoints;
         ECS &Ecs;
+        struct WorldBoundrarys &worldBoundrarys;
+    };
+
+    static void Run(Config &);
+};
+
+class BoundraryCollisionSystem {
+public:
+    struct Config {
+        ECS &Ecs;
+        struct WorldBoundrarys &worldBoundrarys;
     };
 
     static void Run(Config &);
@@ -36,7 +47,6 @@ public:
     };
 
     static void Run(Config &);
-
 };
 
 class GravitySystem {

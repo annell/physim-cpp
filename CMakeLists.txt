@@ -9,7 +9,7 @@ FetchContent_Declare(SFML
         GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-add_subdirectory(thirdParty/ecs)
+add_subdirectory("thirdParty/ecs")
 add_subdirectory("thirdParty/octree-cpp")
 
 add_executable(${PROJECT_NAME} src/main.cpp src/System.h src/System.cpp src/Util.cpp)
