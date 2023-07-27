@@ -12,7 +12,7 @@ FetchContent_MakeAvailable(SFML)
 add_subdirectory(thirdParty/ecs)
 add_subdirectory("thirdParty/octree-cpp")
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp src/System.h src/System.cpp src/Util.cpp)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE sfml-window sfml-graphics)
 
