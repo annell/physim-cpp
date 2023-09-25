@@ -13,6 +13,13 @@ struct Circle {
     float Friction = 0.5;
 };
 
+struct Line {
+    sf::Vector2f Start;
+    sf::Vector2f End;
+    sf::Vector2f Normal;
+    float d = 0.0;
+};
+
 struct Verlet {
     sf::Vector2f Position;
     sf::Vector2f Acceleration;
@@ -36,11 +43,11 @@ struct Verlet {
     }
 
     void Update(float dt) {
-        PreviousPosition = Position;
-        Velocity += Acceleration * dt * dt;
-        CapVelocity();
-        Position += Velocity;
-        Acceleration = {0, 0};
+        Position += Velocity * dt;
+    }
+
+    void Revert() {
+        Position = PreviousPosition;
     }
 };
 

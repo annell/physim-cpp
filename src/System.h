@@ -13,7 +13,7 @@ namespace sf {
     class RenderWindow;
 }
 
-using ECS = ecs::ECSManager<sf::CircleShape, Circle, Verlet, ecs::EntityID>;
+using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID>;
 
 class RenderSystem {
 public:
@@ -44,6 +44,7 @@ public:
     struct Config {
         ECS &Ecs;
         struct WorldBoundrarys &worldBoundrarys;
+        float dt = 0.0f;
     };
 
     static void Run(Config &);
@@ -53,8 +54,9 @@ class GravitySystem {
 public:
     struct Config {
         ECS &Ecs;
-        float dt;
+        float dt = 0.0f;
     };
 
     static void Run(Config &);
 };
+
