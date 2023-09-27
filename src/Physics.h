@@ -6,101 +6,124 @@
 #include "Util.h"
 #include "Components.h"
 
-struct LineIntersectionResult {
-    sf::Vector2f Normal;
-    sf::Vector2f Intersection;
-    float overlap = 0.0f;
+struct CollisionResult {
+    float tCollision = 100.0f;
+    ecs::EntityID id1;
+    ecs::EntityID id2;
 };
 
-std::vector<LineIntersectionResult>
-CircleLineIntersection(const sf::Vector2f &lineStart, const sf::Vector2f &lineEnd, const sf::Vector2f &circleCenter,
-                       float circleRadius) {
-    std::vector<LineIntersectionResult> intersections;
-    sf::Vector2f lineDirection = lineEnd - lineStart;
-    sf::Vector2f lineNormal = {lineDirection.y, -lineDirection.x};
-    lineNormal /= std::sqrt(lineNormal.x * lineNormal.x + lineNormal.y * lineNormal.y);
-    lineNormal = Normalize(lineNormal);
+CollisionResult min(CollisionResult a, CollisionResult b) {
+    if (a.tCollision < b.tCollision) {
+        return a;
+    }
+    return b;
+}
 
-    float a = lineDirection.x * lineDirection.x + lineDirection.y * lineDirection.y;
-    float b = 2 * (lineDirection.x * (lineStart.x - circleCenter.x) + lineDirection.y * (lineStart.y - circleCenter.y));
-    float c = circleCenter.x * circleCenter.x + circleCenter.y * circleCenter.y + lineStart.x * lineStart.x +
-              lineStart.y * lineStart.y - 2 * (circleCenter.x * lineStart.x + circleCenter.y * lineStart.y) -
-              circleRadius * circleRadius;
-    float discriminant = b * b - 4 * a * c;
-    if (discriminant >= 0) {
-        float sqrtDiscriminant = std::sqrt(discriminant);
-        float t1 = (-b + sqrtDiscriminant) / (2 * a);
-        float t2 = (-b - sqrtDiscriminant) / (2 * a);
-        if ((t1 >= 0 && t1 <= 1) && (t2 >= 0 && t2 <= 1)) {
-            sf::Vector2f intersection = lineStart + lineDirection * (t1 + t2) / 2.0f;
-            auto overlap = circleRadius - Distance(circleCenter, intersection);
-            intersections.push_back({lineNormal, intersection, overlap});
-        } else if (t1 >= 0 && t1 <= 1) {
-            intersections.push_back({lineNormal, lineStart + lineDirection * t1, 0.0f});
-        } else if (t2 >= 0 && t2 <= 1) {
-            intersections.push_back({lineNormal, lineStart + lineDirection * t2, 0.0f});
+const bool SphereSphereSweep
+        (
+                const float ra, //radius of sphere A
+                const sf::Vector2f &A0, //previous position of sphere A
+                const sf::Vector2f &A1, //current position of sphere A
+                const float rb, //radius of sphere B
+                const sf::Vector2f &B0, //previous position of sphere B
+                const sf::Vector2f &B1, //current position of sphere B
+                float &u0 //normalized time of first collision
+        ) {
+    if (A0 == A1) {
+        return false;
+    }
+    auto Bvel = B0 - B1;
+    auto B = A1 - Bvel;
+
+    auto res = IntersectionLineToPoint(A0, B, B0);
+
+    if (res.distance > ra + rb) {
+        return false;
+    }
+    u0 = res.t;
+    return true;
+}
+
+const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0) {
+    return SphereSphereSweep(radiusA, A.PreviousPosition, A.Position, radiusB, B.PreviousPosition, B.Position, u0);
+}
+
+CollisionResult SphereCollision(ECS& ecs, const Octree& octree, const Verlet& verlet, float radius, ecs::EntityID id1, float tLeft) {
+    CollisionResult collisionResult;
+    auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, radius + 12});
+    for (const auto &testPoint: query) {
+        const auto& id2 = testPoint.Data;
+        if (id1 != id2) {
+            float normalizedCollisionT = 0.0f;
+
+            auto& verlet2 = ecs.Get<Verlet>(id2);
+            const auto radius2 = ecs.Get<Circle>(id2).Radius;
+            if (VerletSphereSweep(verlet, radius, verlet2,
+                                  radius2, normalizedCollisionT)) {
+                auto t = normalizedCollisionT * tLeft;
+                if (t <= collisionResult.tCollision) {
+                    collisionResult.tCollision = t;
+                    collisionResult.id1 = id1;
+                    collisionResult.id2 = id2;
+                }
+            }
         }
     }
-    return intersections;
+    return collisionResult;
 }
 
-void Collision(const LineIntersectionResult &intersection, Verlet &verlet) {
-    auto u = Dot(verlet.Velocity, intersection.Normal) * intersection.Normal;
-    auto w = verlet.Velocity - u;
-    auto d = 0.8f;
-    verlet.Velocity = d * w - d * u;
-    verlet.Position = verlet.PreviousPosition;
-}
 
-bool IsStuck(const Verlet &circle) {
-    return circle.Position == circle.PreviousPosition;
-}
-
-void Yank(const LineIntersectionResult &intersection, Verlet &verlet) {
-    verlet.Position += (verlet.Position - intersection.Intersection) * intersection.overlap * 0.1f;
-}
-
-bool HandleCircleBoxCollision(Verlet &circle, const sf::FloatRect &box, float circleRadius) {
-    auto intersections = CircleLineIntersection(box.getPosition(), {box.left + box.width, box.top}, circle.Position,
-                                                circleRadius);
-    if (intersections.empty())
-        intersections = CircleLineIntersection({box.left + box.width, box.top},
-                                               {box.left + box.width, box.top + box.height}, circle.Position,
-                                               circleRadius);
-    if (intersections.empty())
-        intersections = CircleLineIntersection({box.left + box.width, box.top + box.height},
-                                               {box.left, box.top + box.height}, circle.Position, circleRadius);
-    if (intersections.empty())
-        intersections = CircleLineIntersection({box.left, box.top + box.height}, box.getPosition(), circle.Position,
-                                               circleRadius);
-    if (intersections.empty())
-        return false;
-    auto intersection = intersections[0];
-    if (IsStuck(circle)) {
-        Yank(intersection, circle);
+bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0) {
+    // Compute distance of sphere center to plane
+    auto d = IntersectionLineToPoint(line.Start, line.End, {0, 0}).distance;
+    float dist = Dot(line.Normal, verlet.Position) - d;
+    if (std::abs(dist) <= radius) {
+        // The sphere is already overlapping the plane. Set time of
+        // intersection to zero and q to sphere center
+        u0 = 0.0f;
+        return true;
     } else {
-        Collision(intersection, circle);
+        float denom = Dot(line.Normal, verlet.Velocity);
+        if (denom * dist >= 0.0f) {
+            // No intersection as sphere moving parallel to or away from plane
+            return false;
+        } else {
+            // Sphere is moving towards the plane
+            // Use +r in computations if sphere in front of plane, else -r
+            float r = dist > 0.0f ? radius : -radius;
+            u0 = (r - dist) / denom;
+            return true;
+        }
     }
-    return true;
 }
 
-bool HandleCircleCircleCollision(Verlet &circle1, Verlet &circle2, float circleRadius, float circleRadius2) {
-    auto distance = Distance(circle1.Position, circle2.Position);
-    float overlap = distance - (circleRadius + circleRadius2);
-    if (overlap > 0)
-        return false;
-    auto normal1 = Normalize(circle1.Position - circle2.Position);
-    auto normal2 = Normalize(circle2.Position - circle1.Position);
-    LineIntersectionResult intersection1 = {normal1, circle1.Position + normal1 * circleRadius, -overlap};
-    LineIntersectionResult intersection2 = {normal2, circle2.Position + normal2 * circleRadius2, -overlap};
-    if (IsStuck(circle1)) {
-        Yank(intersection1, circle1);
-        Yank(intersection2, circle2);
-    } else {
-        Collision(intersection1, circle1);
-        Collision(intersection2, circle2);
+CollisionResult LineCollision(ECS& ecs, const Verlet& verlet, float radius, ecs::EntityID id1) {
+    CollisionResult collisionResult;
+    for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
+        float t = 0.0f;
+        if (IntersectMovingSpherePlane(radius, verlet, line, t)) {
+            if (t <= collisionResult.tCollision) {
+                collisionResult.tCollision = t;
+                collisionResult.id1 = id1;
+                collisionResult.id2 = id2;
+            }
+        }
     }
-    return true;
+    return collisionResult;
 }
 
+const void RecalculateSphereCollision(Verlet& A, float radiusA, Verlet& B, float radiusB) {
+    // Calculate the collision normal
+    auto n = NormalBetweenPoints(A.Position, B.Position);
+    auto n2 = NormalBetweenPoints(B.Position, A.Position);
 
+    //Relative velocity
+    auto rv = B.Velocity - A.Velocity;
+    rv = rv * 0.5f;
+
+    // Update both velocities after collision
+    A.Velocity = rv;
+    B.Velocity = -rv;
+    Reflect(A.Velocity, n);
+    Reflect(B.Velocity, n2);
+}

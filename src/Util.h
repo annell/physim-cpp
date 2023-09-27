@@ -41,8 +41,6 @@ struct WorldBoundrarys {
   [[nodiscard]] sf::FloatRect GetBox() const { return {Position, Size}; }
 };
 
-bool CloseEnough(float t0, float t1, float episilon);
-
 using Octree = OctreeCpp<vec, ecs::EntityID>;
 
 Octree MakeOctree(ECS& ecs, const WorldBoundrarys& worldBoundrarys);

@@ -97,35 +97,23 @@ int main() {
             timer = 0;
             fps = std::to_string(1 / dt);
         }
-        {
-            GravitySystem::Config config{
-                    .Ecs=ecs,
-                    .dt=dt
-            };
-            GravitySystem::Run(config);
-        }
-
-        {
-            CollisionSystem::Config config{
-                    .Ecs=ecs,
-                    .worldBoundrarys=worldBoundrarys,
-                    .dt=dt
-            };
-            CollisionSystem::Run(config);
-        }
-
-        {
-            RenderSystem::Config config{
-                    .FpsText=fps,
-                    .Window=sfmlWin,
-                    .fpsText=fpsText,
-                    .nrPoints=nrPoints,
-                    .Ecs=ecs,
-                    .worldBoundrarys=worldBoundrarys
-            };
-
-            RenderSystem::Run(config);
-        }
+        GravitySystem::Run(GravitySystem::Config{
+                .Ecs=ecs,
+                .dt=dt
+        });
+        CollisionSystem::Run(CollisionSystem::Config{
+                .Ecs=ecs,
+                .worldBoundrarys=worldBoundrarys,
+                .dt=dt
+        });
+        RenderSystem::Run(RenderSystem::Config{
+                .FpsText=fps,
+                .Window=sfmlWin,
+                .fpsText=fpsText,
+                .nrPoints=nrPoints,
+                .Ecs=ecs,
+                .worldBoundrarys=worldBoundrarys
+        });
     }
     return 0;
 }

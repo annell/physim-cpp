@@ -56,9 +56,6 @@ float Hypot2(const sf::Vector2f &v1, const sf::Vector2f &v2) {
     return Dot(v1 - v2, v1 - v2);
 }
 
-bool CloseEnough(float t0, float t1, float episilon) {
-    return std::abs(t0 - t1) < episilon;
-}
 
 Octree MakeOctree(ECS& ecs, const WorldBoundrarys& worldBoundrarys) {
     Octree octree({{0,                             0,                             0},

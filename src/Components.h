@@ -27,21 +27,6 @@ struct Verlet {
     sf::Vector2f PreviousPosition;
     float MaxVelocity = 1.0;
 
-    void CapVelocity() {
-        if (Velocity.x > MaxVelocity) {
-            Velocity.x = MaxVelocity;
-        }
-        if (Velocity.x < -MaxVelocity) {
-            Velocity.x = -MaxVelocity;
-        }
-        if (Velocity.y > MaxVelocity) {
-            Velocity.y = MaxVelocity;
-        }
-        if (Velocity.y < -MaxVelocity) {
-            Velocity.y = -MaxVelocity;
-        }
-    }
-
     void Update(float dt) {
         Position += Velocity * dt;
     }

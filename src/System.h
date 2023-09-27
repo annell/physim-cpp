@@ -12,51 +12,39 @@
 namespace sf {
     class RenderWindow;
 }
+struct WorldBoundrarys;
 
 using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID>;
 
-class RenderSystem {
-public:
+namespace RenderSystem {
     struct Config {
         std::string FpsText;
         sf::RenderWindow &Window;
         sf::Text &fpsText;
         sf::Text &nrPoints;
         ECS &Ecs;
-        struct WorldBoundrarys &worldBoundrarys;
+        WorldBoundrarys &worldBoundrarys;
     };
 
-    static void Run(Config &);
-};
+    void Run(const Config &);
+}
 
-class BoundraryCollisionSystem {
-public:
+namespace CollisionSystem {
     struct Config {
         ECS &Ecs;
-        struct WorldBoundrarys &worldBoundrarys;
-    };
-
-    static void Run(Config &);
-};
-
-class CollisionSystem {
-public:
-    struct Config {
-        ECS &Ecs;
-        struct WorldBoundrarys &worldBoundrarys;
+        WorldBoundrarys &worldBoundrarys;
         float dt = 0.0f;
     };
 
-    static void Run(Config &);
-};
+    void Run(const Config &);
+}
 
-class GravitySystem {
-public:
+namespace GravitySystem {
     struct Config {
         ECS &Ecs;
         float dt = 0.0f;
     };
 
-    static void Run(Config &);
-};
+    void Run(const Config &);
+}
 
