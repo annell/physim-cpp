@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "SFML/Graphics.hpp"
 #include "System.h"
 #include "../thirdParty/octree-cpp/src/OctreeCpp.h"
 
@@ -12,7 +11,7 @@ float RandomFloat(float min, float max);
 
 sf::Color RandomColor();
 
-bool Collision(const sf::CircleShape &circle1, const sf::CircleShape &circle2);
+bool Collision(const class sf::CircleShape &circle1, const sf::CircleShape &circle2);
 
 float Distance(const sf::Vector2f &point1, const sf::Vector2f &point2);
 

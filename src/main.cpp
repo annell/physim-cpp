@@ -54,7 +54,7 @@ int main() {
     ECS ecs;
     sf::Font font;
     auto path = std::filesystem::current_path();
-    if (!font.loadFromFile(path.generic_string() + "/../resources/myfont.ttf")) {
+    if (!font.loadFromFile(path.generic_string() + "/../../resources/myfont.ttf")) {
         return -1;
     }
     {

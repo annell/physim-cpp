@@ -1,5 +1,6 @@
 #include "Util.h"
 
+#include "SFML/Graphics.hpp"
 #include <random>
 
 float RandomFloat(float min, float max) {

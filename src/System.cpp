@@ -51,7 +51,8 @@ void CollisionSystem::Run(const Config &config) {
         }
 
         for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
-            collisionResult = min(SphereCollision(config.Ecs, octree, verlet, circle.Radius, id, tLeft), collisionResult);
+            auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + 12});
+            collisionResult = min(SphereCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft), collisionResult);
             collisionResult = min(LineCollision(config.Ecs, verlet, circle.Radius, id), collisionResult);
         }
 
