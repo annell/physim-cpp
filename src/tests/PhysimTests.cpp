@@ -7,27 +7,277 @@
 #include <gtest/gtest.h>
 #include "SFML/System.hpp"
 
-TEST(Physim, hello) {
-    ASSERT_EQ(1, 1);
+auto addCircle(ECS& ecs, float radius, const sf::Vector2f& Position, const sf::Vector2f& Velocity) {
+    auto shape = sf::CircleShape(radius);
+    shape.setOrigin(shape.getRadius(), shape.getRadius());
+    shape.setPosition(Position);
+    auto id = ecs.AddEntity();
+    ecs.Add(id, id);
+    ecs.Add(id, shape);
+    ecs.Add(id, Circle{.Radius=shape.getRadius()});
+    ecs.Add(id, Verlet{Position, {0, 0}, Velocity, Position});
+    return id;
+}
+
+auto buildECS() {
     ECS ecs;
     WorldBoundrarys worldBoundrarys{{0,   0},
                                     {700, 700}};
     sf::Vector2f A = {0, 0};
     sf::Vector2f B = {worldBoundrarys.Size.x, 0};
-    sf::Vector2f C = worldBoundrarys.Size;
-    sf::Vector2f D = {0, worldBoundrarys.Size.y};
     auto l1 = ecs.AddEntity();
     ecs.Add(l1, Line{A, B, NormalBetweenPoints(A, B)});
     ecs.Add(l1, l1);
-    auto l2 = ecs.AddEntity();
-    ecs.Add(l2, Line{B, C, NormalBetweenPoints(B, C)});
-    ecs.Add(l2, l2);
-    auto l3 = ecs.AddEntity();
-    ecs.Add(l3, Line{C, D, NormalBetweenPoints(C, D)});
-    ecs.Add(l3, l3);
-    auto l4 = ecs.AddEntity();
-    ecs.Add(l4, Line{D, A, NormalBetweenPoints(D, A)});
-    ecs.Add(l4, l4);
+
+    addCircle(ecs, 10, {0.0f, 0.0f}, {0.1f, 0.1f});
+
+    return ecs;
+}
+
+TEST(Physim, AddCircle) {
+    auto ecs = buildECS();
+    addCircle(ecs, 10, {0.0f, 0.0f}, {0.1f, 0.0f});
+    ASSERT_EQ(ecs.Size(), 3);
+}
+
+TEST(Physim, OverlappingCircles) {
+    auto ecs = buildECS();
+    auto id = addCircle(ecs, 10, {10.5f, 10.5f}, {-0.1f, 0.0f});
+    float dt = 10.0f;
+    for (const auto &[verlet]: ecs.GetSystem<Verlet>()) {
+        verlet.Update(dt);
+    }
+    auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
+                                                  {700, 700}});
+    ASSERT_EQ(ecs.Size(), 3);
+    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_FLOAT_EQ(results.tCollision, 0.0);
+    ASSERT_EQ(results.id1, ecs::EntityID(2));
+    ASSERT_EQ(results.id2, ecs::EntityID(1));
+}
+
+TEST(Physim, CirclesMovingAway) {
+    auto ecs = buildECS();
+    auto id = addCircle(ecs, 5, {15.5f, 15.5f}, {-0.1f, 0.0f});
+    float dt = 10.0f;
+    for (const auto &[verlet]: ecs.GetSystem<Verlet>()) {
+        verlet.Update(dt);
+    }
+    auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
+                                                  {700, 700}});
+    ASSERT_EQ(ecs.Size(), 3);
+    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_FLOAT_EQ(results.tCollision, 100.0f);
+}
+
+TEST(Physim, CirclesOverlapping) {
+    auto ecs = buildECS();
+    auto id = addCircle(ecs, 5, {12.5f, 0.0f}, {0.0f, 0.0f});
+    float dt = 10.0f;
+    for (const auto &[verlet]: ecs.GetSystem<Verlet>()) {
+        verlet.Update(dt);
+    }
+    auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
+                                                  {700, 700}});
+    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_FLOAT_EQ(results.tCollision, 0.0f);
+    ASSERT_EQ(results.id1, ecs::EntityID(2));
+    ASSERT_EQ(results.id2, ecs::EntityID(1));
+}
+
+TEST(Physim, CirclesMovingCloser) {
+    auto ecs = buildECS();
+    auto id = addCircle(ecs, 5, {16.0f, 0.0f}, {0.0f, 0.0f});
+    float dt = 10.0f;
+    for (const auto &[verlet]: ecs.GetSystem<Verlet>()) {
+        verlet.Update(dt);
+    }
+    auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
+                                                  {700, 700}});
+    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    //ASSERT_FLOAT_EQ(results.tCollision, 0.0f);
+    //ASSERT_EQ(results.id1, ecs::EntityID(2));
+    //ASSERT_EQ(results.id2, ecs::EntityID(1));
+}
+
+TEST(Physim, IntersectionLineToPoint1) {
+    sf::Vector2f point = {0, 0};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 0.0f);
+    ASSERT_FLOAT_EQ(result.t, 0.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint2) {
+    sf::Vector2f point = {1, 1};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 0.0f);
+    ASSERT_FLOAT_EQ(result.t, 1.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint3) {
+    sf::Vector2f point = {2, 1};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 1.0f);
+    ASSERT_FLOAT_EQ(result.t, 1.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint4) {
+    sf::Vector2f point = {0, -1};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 1.0f);
+    ASSERT_FLOAT_EQ(result.t, 0.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint5) {
+    sf::Vector2f point = {-1, 0};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 1.0f);
+    ASSERT_FLOAT_EQ(result.t, 0.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint6) {
+    sf::Vector2f point = {-1, -1};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 1.4142135f);
+    ASSERT_FLOAT_EQ(result.t, 0.0f);
+}
+
+TEST(Physim, IntersectionLineToPoint7) {
+    sf::Vector2f point = {.5f, .5f};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 0.0f);
+    ASSERT_FLOAT_EQ(result.t, 0.5f);
+}
+
+TEST(Physim, IntersectionLineToPoint8) {
+    sf::Vector2f point = {.2f, .6f};
+    sf::Vector2f l1 = {0, 0};
+    sf::Vector2f l2 = {1, 1};
+
+    auto result = IntersectionLineToPoint(l1, l2, point);
+    ASSERT_FLOAT_EQ(result.distance, 0.28284273f);
+    ASSERT_FLOAT_EQ(result.t, 0.4f);
+}
+
+TEST(Physim, SphereSphereSweep1) {
+    sf::Vector2f a0 = {0, 0};
+    sf::Vector2f a1 = {1, 1};
+    sf::Vector2f b0 = {0, 0};
+    sf::Vector2f b1 = {1, 1};
+    float ra = 1;
+    float rb = 1;
+    float u0 = 0;
+    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_FLOAT_EQ(u0, 0.0f);
+}
+
+TEST(Physim, SphereSphereSweep2) {
+    sf::Vector2f a0 = {5, 5};
+    sf::Vector2f a1 = {5, 5};
+    sf::Vector2f b0 = {0, 0};
+    sf::Vector2f b1 = {5.01, 5.01};
+    float ra = 1;
+    float rb = 1;
+    float u0 = 0;
+    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_FLOAT_EQ(u0, 0.99800396f);
+}
+
+TEST(Physim, SphereSphereSweep3) {
+    sf::Vector2f a0 = {5, 5};
+    sf::Vector2f a1 = {0.01f, 0.01f};
+    sf::Vector2f b0 = {0, 0};
+    sf::Vector2f b1 = {5.01, 5.01};
+    float ra = 1;
+    float rb = 1;
+    float u0 = 0;
+    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_FLOAT_EQ(u0, 0.5f);
+}
+
+TEST(Physim, SphereSphereSweep4) {
+    sf::Vector2f a0 = {5, 5};
+    sf::Vector2f a1 = {4.01f, 3.01f};
+    sf::Vector2f b0 = {0, 0};
+    sf::Vector2f b1 = {5.01, 5.01};
+    float ra = 1;
+    float rb = 1;
+    float u0 = 0;
+    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_FLOAT_EQ(u0, 0.7647059f);
+}
+
+TEST(Physim, SphereSphereSweep5) {
+    sf::Vector2f a0 = {5, 5};
+    sf::Vector2f a1 = {4.01f, 3.01f};
+    sf::Vector2f b0 = {0, 0};
+    sf::Vector2f b1 = {25.01, 25.01};
+    float ra = 1;
+    float rb = 1;
+    float u0 = 0;
+    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_FLOAT_EQ(u0, 0.18861209f);
+}
+
+TEST(Physim, RecalculateSphereCollision1) {
+    Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
+    Verlet v2 = {.Position={0, 2}, .Velocity={0, -1}};
+    RecalculateSphereCollision(v1, v2);
+    ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.y, 1.0f);
+}
+
+TEST(Physim, RecalculateSphereCollision2) {
+    Verlet v1 = {.Position={2, 0}, .Velocity={0, 0}};
+    Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
+    RecalculateSphereCollision(v1, v2);
+    ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v1.Velocity.y, 0.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.y, 0.0f);
+}
+
+TEST(Physim, RecalculateSphereCollision3) {
+    Verlet v1 = {.Position={2, 0}, .Velocity={-0.5f, 0.5f}};
+    Verlet v2 = {.Position={0, 2}, .Velocity={0.5f, -0.5f}};
+    RecalculateSphereCollision(v1, v2);
+    ASSERT_FLOAT_EQ(v1.Velocity.x, 0.5f);
+    ASSERT_FLOAT_EQ(v1.Velocity.y, -0.5f);
+    ASSERT_FLOAT_EQ(v2.Velocity.x, -0.5f);
+    ASSERT_FLOAT_EQ(v2.Velocity.y, 0.5f);
+}
+
+TEST(Physim, RecalculateSphereCollision4) {
+    Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
+    Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
+    RecalculateSphereCollision(v1, v2);
+    ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
+    ASSERT_FLOAT_EQ(v2.Velocity.y, 1.0f);
 }
 
 int main(int argc, char **argv) {

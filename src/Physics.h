@@ -39,6 +39,9 @@ CollisionResult SphereCollision(ECS& ecs, const auto& query, const Verlet& verle
             if (VerletSphereSweep(verlet, radius, verlet2,
                                   radius2, normalizedCollisionT)) {
                 auto t = normalizedCollisionT * tLeft;
+                if (t <= 0.00001) {
+                    //break;
+                }
                 if (t <= collisionResult.tCollision) {
                     collisionResult.tCollision = t;
                     collisionResult.id1 = id1;
@@ -51,4 +54,4 @@ CollisionResult SphereCollision(ECS& ecs, const auto& query, const Verlet& verle
 }
 bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0);
 CollisionResult LineCollision(ECS& ecs, const Verlet& verlet, float radius, ecs::EntityID id1);
-const void RecalculateSphereCollision(Verlet& A, float radiusA, Verlet& B, float radiusB);
+const void RecalculateSphereCollision(Verlet& A, Verlet& B);

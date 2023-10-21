@@ -25,7 +25,7 @@ struct Verlet {
     sf::Vector2f Acceleration;
     sf::Vector2f Velocity;
     sf::Vector2f PreviousPosition;
-    float MaxVelocity = 1.0;
+    float Mass = 1.0;
 
     void Update(float dt) {
         Position += Velocity * dt;

@@ -32,7 +32,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     ecs.Add(id, id);
     ecs.Add(id, shape);
     ecs.Add(id, Circle{.Radius=ecs.template Get<sf::CircleShape>(id).getRadius()});
-    ecs.Add(id, Verlet{pos, {0, 0}, {RandomFloat(-0.1, 0.1), RandomFloat(-0.1, 0.1)}, pos});
+    ecs.Add(id, Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos});
 }
 
 void HandleEvents(sf::RenderWindow &sfmlWin) {
@@ -91,7 +91,7 @@ int main() {
         float dt = clock.restart().asSeconds();
         timer += dt;
         if (timer > 0.05f) {
-            if (ecs.Size() < 50) {
+            if (ecs.Size() < 20) {
                 AddCircle(ecs, worldBoundrarys);
             }
             timer = 0;

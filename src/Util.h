@@ -25,7 +25,7 @@ sf::Vector2f Normalize(const sf::Vector2f &vector);
 
 sf::Vector2f NormalBetweenPoints(const sf::Vector2f &point1, const sf::Vector2f &point2);
 
-void Reflect(sf::Vector2f &vector, const sf::Vector2f &normal);
+sf::Vector2f Reflect(const sf::Vector2f &vector, const sf::Vector2f &normal);
 
 struct vec {
   float x, y, z = 0;

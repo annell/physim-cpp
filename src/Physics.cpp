@@ -10,20 +10,22 @@ CollisionResult min(CollisionResult a, CollisionResult b) {
 const bool SphereSphereSweep
         (
                 const float ra, //radius of sphere A
-                const sf::Vector2f &A0, //previous position of sphere A
-                const sf::Vector2f &A1, //current position of sphere A
+                const sf::Vector2f &A0, //Current pos sphere A
+                const sf::Vector2f &A1, //Next pos sphere A
                 const float rb, //radius of sphere B
-                const sf::Vector2f &B0, //previous position of sphere B
-                const sf::Vector2f &B1, //current position of sphere B
+                const sf::Vector2f &B0, //Current pos sphere B
+                const sf::Vector2f &B1, //Next pos sphere B
                 float &u0 //normalized time of first collision
         ) {
-    if (A0 == A1) {
-        return false;
+    if (Distance(A0, B0) < ra + rb) {
+        u0 = 0.0f;
+        return true;
     }
+    auto Avel = A0 - A1;
     auto Bvel = B0 - B1;
-    auto B = A1 - Bvel;
+    auto B = Avel - Bvel;
 
-    auto res = IntersectionLineToPoint(A0, B, B0);
+    auto res = IntersectionLineToPoint(B0, B, A0);
 
     if (res.distance > ra + rb) {
         return false;
@@ -75,18 +77,14 @@ CollisionResult LineCollision(ECS& ecs, const Verlet& verlet, float radius, ecs:
     return collisionResult;
 }
 
-const void RecalculateSphereCollision(Verlet& A, float radiusA, Verlet& B, float radiusB) {
-    // Calculate the collision normal
-    auto n = NormalBetweenPoints(A.Position, B.Position);
-    auto n2 = NormalBetweenPoints(B.Position, A.Position);
+const void RecalculateSphereCollision(Verlet& A, Verlet& B) {
+    auto normal = Normalize(A.Position - B.Position);
 
-    //Relative velocity
-    auto rv = B.Velocity - A.Velocity;
-    rv = rv * 0.5f;
+    auto a1 = Projection(A.Velocity, normal);
+    auto a2 = Projection(B.Velocity, normal);
 
-    // Update both velocities after collision
-    A.Velocity = rv;
-    B.Velocity = -rv;
-    Reflect(A.Velocity, n);
-    Reflect(B.Velocity, n2);
+    auto optimizedP = (2.0f * (a1 - a2)) / (A.Mass + B.Mass);
+
+    A.Velocity -= optimizedP * B.Mass;
+    B.Velocity += optimizedP * A.Mass;
 }

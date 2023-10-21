@@ -36,8 +36,8 @@ sf::Vector2f NormalBetweenPoints(const sf::Vector2f &point1, const sf::Vector2f 
     return normal;
 }
 
-void Reflect(sf::Vector2f &vector, const sf::Vector2f &normal) {
-    vector -= 2 * Dot(vector, normal) * normal;
+sf::Vector2f Reflect(const sf::Vector2f &vector, const sf::Vector2f &normal) {
+    return 2 * Dot(vector, normal) * normal;
 }
 
 sf::Vector2f Normalize(const sf::Vector2f &vector) {
@@ -49,6 +49,9 @@ sf::Vector2f Normalize(const sf::Vector2f &vector) {
 }
 
 sf::Vector2f Projection(const sf::Vector2f &vector, const sf::Vector2f &axis) {
+    if (axis == sf::Vector2f(0, 0)) {
+        return sf::Vector2f(0, 0);
+    }
     float k = Dot(vector, axis) / Dot(axis, axis);
     return k * axis;
 }
@@ -80,12 +83,12 @@ IntersectionResult IntersectionLineToPoint(const sf::Vector2f& A, const sf::Vect
     auto D = Projection(AC, AB) + A;
     auto AD = D - A;
 
-    auto k = AB.x > AB.y ? AD.x / AB.x : AD.y / AB.y;
+    auto k = std::abs(AB.x) > std::abs(AB.y) ? AD.x / AB.x : AD.y / AB.y;
 
     if (k <= 0) {
         return {std::sqrt(Hypot2(C, A)), 0.0f};
     } else if (k >= 1) {
         return {std::sqrt(Hypot2(C, B)), 1.0f};
     }
-    return {std::sqrt(Hypot2(C, D)), D.x / (A.x + B.x)};
+    return {std::sqrt(Hypot2(C, D)), std::abs(D.x / (A.x + B.x))};
 }

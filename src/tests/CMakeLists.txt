@@ -17,7 +17,18 @@ add_executable(${PROJECT_NAME}_test
         ../System.h
         ../Util.h
 )
+add_executable(${PROJECT_NAME}_Utiltest
+        UtilTests.cpp
+        ../System.cpp
+        ../Util.cpp
+        ../Physics.cpp
+        ../Components.h
+        ../Physics.h
+        ../System.h
+        ../Util.h
+)
 target_link_libraries(${PROJECT_NAME}_test GTest::gtest GTest::gtest_main sfml-graphics sfml-window)
+target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sfml-graphics sfml-window)
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}_test)
