@@ -1,7 +1,7 @@
 #include "Physics.h"
 
 CollisionResult min(CollisionResult a, CollisionResult b) {
-    if (a.tCollision < b.tCollision) {
+    if (FloatEqual(a.tCollision, b.tCollision) || FloatLessThan(a.tCollision, b.tCollision)) {
         return a;
     }
     return b;
@@ -17,21 +17,21 @@ const bool SphereSphereSweep
                 const sf::Vector2f &B1, //Next pos sphere B
                 float &u0 //normalized time of first collision
         ) {
-    if (Distance(A0, B0) < ra + rb) {
-        u0 = 0.0f;
-        return true;
-    }
+    sf::Vector2f closestPoint;
+    auto dist = SegmentSegmentDistance(A0, A1, B0, B1, closestPoint);
+
     auto Avel = A0 - A1;
     auto Bvel = B0 - B1;
     auto B = Avel - Bvel;
 
-    auto res = IntersectionLineToPoint(B0, B, A0);
+    auto point = DistanceLineToPoint(B0, B, closestPoint);
 
-    if (res.distance > ra + rb) {
-        return false;
+    if (std::abs(dist) < ra + rb) {
+        u0 = point.t;
+        return true;
     }
-    u0 = res.t;
-    return true;
+    u0 = 1.0f;
+    return false;
 }
 
 const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0) {
@@ -40,37 +40,28 @@ const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, fl
 
 bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0) {
     // Compute distance of sphere center to plane
-    auto d = IntersectionLineToPoint(line.Start, line.End, {0, 0}).distance;
-    float dist = Dot(line.Normal, verlet.Position) - d;
-    if (std::abs(dist) <= radius) {
-        // The sphere is already overlapping the plane. Set time of
-        // intersection to zero and q to sphere center
-        u0 = 0.0f;
-        return true;
+    sf::Vector2f closestPoint;
+    auto dist = SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint);
+
+    if (std::abs(dist) >= radius) {
+        u0 = 1.0f;
+        return false;
     } else {
-        float denom = Dot(line.Normal, verlet.Velocity);
-        if (denom * dist >= 0.0f) {
-            // No intersection as sphere moving parallel to or away from plane
-            return false;
-        } else {
-            // Sphere is moving towards the plane
-            // Use +r in computations if sphere in front of plane, else -r
-            float r = dist > 0.0f ? radius : -radius;
-            u0 = (r - dist) / denom;
-            return true;
-        }
+        u0 = Distance(verlet.PreviousPosition, closestPoint) / Distance(verlet.PreviousPosition, verlet.Position);
+        return true;
     }
 }
 
-CollisionResult LineCollision(ECS& ecs, const Verlet& verlet, float radius, ecs::EntityID id1) {
-    CollisionResult collisionResult;
+std::optional<CollisionResult> LineCollision(ECS& ecs, const Verlet& verlet, float radius, float dt) {
+    std::optional<CollisionResult> collisionResult;
     for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
-        float t = 0.0f;
+        float t = 1.0f;
         if (IntersectMovingSpherePlane(radius, verlet, line, t)) {
-            if (t <= collisionResult.tCollision) {
-                collisionResult.tCollision = t;
-                collisionResult.id1 = id1;
-                collisionResult.id2 = id2;
+            t *= dt;
+            if (!collisionResult) {
+                collisionResult = CollisionResult{.tCollision=t, .id2=id2};
+            } else if (t <= collisionResult->tCollision) {
+                collisionResult = CollisionResult{.tCollision=t, .id2=id2};
             }
         }
     }

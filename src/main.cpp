@@ -6,14 +6,14 @@
 #include "System.h"
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
-    auto shape = sf::CircleShape(RandomFloat(3, 12));
+    auto shape = sf::CircleShape(10);
     auto midX = worldBoundrarys.Position.x + worldBoundrarys.Size.x / 2;
     auto midY = worldBoundrarys.Position.y + worldBoundrarys.Size.y / 2;
     shape.setPosition(midX, midY);
     shape.setFillColor(RandomColor());
-    shape.setOrigin(shape.getRadius(), shape.getRadius());
     auto pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20), RandomFloat(20, worldBoundrarys.Size.y - 20)};
     shape.setPosition(pos);
+    shape.setOrigin(shape.getRadius(), shape.getRadius());
     while (true) {
         bool collision = false;
         for (const auto &[shape2] : ecs.template GetSystem<sf::CircleShape>()) {

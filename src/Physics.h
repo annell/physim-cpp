@@ -27,25 +27,22 @@ const bool SphereSphereSweep
                 float &u0 //normalized time of first collision
         );
 const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0);
-CollisionResult SphereCollision(ECS& ecs, const auto& query, const Verlet& verlet, float radius, ecs::EntityID id1, float tLeft) {
-    CollisionResult collisionResult;
+std::optional<CollisionResult> SphereCollision(ECS& ecs, const auto& query, const Verlet& verlet, float radius, ecs::EntityID id1, float tLeft) {
+    std::optional<CollisionResult> collisionResult;
     for (const auto &testPoint: query) {
         const auto& id2 = testPoint.Data;
         if (id1 != id2) {
-            float normalizedCollisionT = 0.0f;
+            float normalizedCollisionT = 1.0f;
 
             auto& verlet2 = ecs.Get<Verlet>(id2);
             const auto radius2 = ecs.Get<Circle>(id2).Radius;
             if (VerletSphereSweep(verlet, radius, verlet2,
                                   radius2, normalizedCollisionT)) {
                 auto t = normalizedCollisionT * tLeft;
-                if (t <= 0.00001) {
-                    //break;
-                }
-                if (t <= collisionResult.tCollision) {
-                    collisionResult.tCollision = t;
-                    collisionResult.id1 = id1;
-                    collisionResult.id2 = id2;
+                if (!collisionResult) {
+                    collisionResult = CollisionResult{t, id1, id2};
+                } else if (t <= collisionResult->tCollision) {
+                    collisionResult = CollisionResult{t, id1, id2};
                 }
             }
         }
@@ -53,5 +50,5 @@ CollisionResult SphereCollision(ECS& ecs, const auto& query, const Verlet& verle
     return collisionResult;
 }
 bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0);
-CollisionResult LineCollision(ECS& ecs, const Verlet& verlet, float radius, ecs::EntityID id1);
+std::optional<CollisionResult> LineCollision(ECS& ecs, const Verlet& verlet, float radius, float dt);
 const void RecalculateSphereCollision(Verlet& A, Verlet& B);

@@ -27,6 +27,16 @@ sf::Vector2f NormalBetweenPoints(const sf::Vector2f &point1, const sf::Vector2f 
 
 sf::Vector2f Reflect(const sf::Vector2f &vector, const sf::Vector2f &normal);
 
+float Length(const sf::Vector2f &vector);
+
+bool FloatEqual(float a, float b);
+
+bool FloatIsZero(float a);
+
+bool FloatLessThan(float a, float b);
+
+bool FloatGreaterThan(float a, float b);
+
 struct vec {
   float x, y, z = 0;
 
@@ -48,4 +58,5 @@ struct IntersectionResult {
     float distance = 0.0f;
     float t = 0.0f; //Normalized time of closest point between Line and circle
 };
-IntersectionResult IntersectionLineToPoint(const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
+IntersectionResult DistanceLineToPoint(const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
+double SegmentSegmentDistance(const sf::Vector2f& L1Start, const sf::Vector2f& L1End, const sf::Vector2f& L2Start, const sf::Vector2f& L2End, sf::Vector2f& Out);
