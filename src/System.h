@@ -24,6 +24,7 @@ namespace RenderSystem {
         sf::Text &nrPoints;
         ECS &Ecs;
         WorldBoundrarys &worldBoundrarys;
+        ecs::EntityID hoveredId;
     };
 
     void Run(const Config &);

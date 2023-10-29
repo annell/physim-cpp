@@ -29,6 +29,10 @@ float Dot(const sf::Vector2f &v1, const sf::Vector2f &v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
+float Determinant(const sf::Vector2f &v1, const sf::Vector2f &v2) {
+    return v1.x * v2.y - v1.y * v2.x;
+}
+
 sf::Vector2f NormalBetweenPoints(const sf::Vector2f &point1, const sf::Vector2f &point2) {
     sf::Vector2f direction = point2 - point1;
     sf::Vector2f normal = {direction.y, -direction.x};
@@ -318,4 +322,24 @@ double SegmentSegmentDistanceSquared(   double p1x, double p1y,
 
 double SegmentSegmentDistance(const sf::Vector2f& L1Start, const sf::Vector2f& L1End, const sf::Vector2f& L2Start, const sf::Vector2f& L2End, sf::Vector2f& Out) {
     return std::sqrt(SegmentSegmentDistanceSquared(L1Start.x, L1Start.y, L1End.x, L1End.y, L2Start.x, L2Start.y, L2End.x, L2End.y, Out.x, Out.y));
+}
+
+constexpr float radToDeg(float rad) { return rad*(180/M_PI); }
+
+float vectorAngle(float x, float y) {
+    if (FloatIsZero(x)) // special cases
+        return (y > 0)? 90
+                      : (y == 0)? 0
+                                : 270;
+    else if (FloatIsZero(y)) // special cases
+        return (x >= 0)? 0
+                       : 180;
+    int ret = radToDeg(atanf((float)y/x));
+    if (x < 0 && y < 0) // quadrant Ⅲ
+        ret = 180 + ret;
+    else if (x < 0) // quadrant Ⅱ
+        ret = 180 + ret; // it actually substracts
+    else if (y < 0) // quadrant Ⅳ
+        ret = 270 + (90 + ret); // it actually substracts
+    return ret;
 }

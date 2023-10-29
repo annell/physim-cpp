@@ -17,6 +17,8 @@ float Distance(const sf::Vector2f &point1, const sf::Vector2f &point2);
 
 float Dot(const sf::Vector2f &v1, const sf::Vector2f &v2);
 
+float Determinant(const sf::Vector2f &v1, const sf::Vector2f &v2);
+
 float Hypot2(const sf::Vector2f &v1, const sf::Vector2f &v2);
 
 sf::Vector2f Projection(const sf::Vector2f &vector, const sf::Vector2f &axis);
@@ -60,3 +62,5 @@ struct IntersectionResult {
 };
 IntersectionResult DistanceLineToPoint(const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
 double SegmentSegmentDistance(const sf::Vector2f& L1Start, const sf::Vector2f& L1End, const sf::Vector2f& L2Start, const sf::Vector2f& L2End, sf::Vector2f& Out);
+
+float vectorAngle(float x, float y);

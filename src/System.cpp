@@ -8,19 +8,74 @@
 #include <iostream>
 #include <cassert>
 
+static constexpr float queryRadius = 30.0f;
 void RenderSystem::Run(const Config &config) {
     config.Window.clear();
     std::vector<ecs::EntityID> entitiesToRemove;
+    std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position : std::optional<sf::Vector2f>();
     for (const auto &[shape, verlet, id]: config.Ecs.GetSystem<sf::CircleShape, Verlet, ecs::EntityID>()) {
+        sf::RectangleShape line;
+        line.setSize({2, shape.getRadius()});
+        line.setPosition(verlet.Position - sf::Vector2f{1, 0});
+        line.setRotation(vectorAngle(verlet.Velocity.x, verlet.Velocity.y) - 90);
+        line.setFillColor(sf::Color::Magenta);
         shape.setPosition(verlet.Position);
+        if (id == config.hoveredId) {
+            shape.setFillColor(sf::Color::Red);
+        } else {
+            if (hoveredPos) {
+                auto distance = Distance(verlet.Position, *hoveredPos);
+                if (distance <= shape.getRadius() + queryRadius) {
+                    shape.setFillColor(sf::Color::Green);
+                } else {
+                    shape.setFillColor(sf::Color::Cyan);
+                }
+            } else {
+                shape.setFillColor(sf::Color::Cyan);
+            }
+        }
         config.Window.draw(shape);
-        sf::Text idText;
-        std::string idString = "id: " + std::to_string(id.GetId()) + "\npos:{x: " + std::to_string(verlet.Position.x) + ", y: " + std::to_string(verlet.Position.y) + "}\n" + "vel:{x: " + std::to_string(verlet.Velocity.x) + ", y: " + std::to_string(verlet.Velocity.y) + "}";
-        idText.setString(idString);
-        idText.setFont(*config.fpsText.getFont());
-        idText.setCharacterSize(12);
-        idText.setPosition(verlet.Position - sf::Vector2f{30, 50.0f});
-        //config.Window.draw(idText);
+        config.Window.draw(line);
+        if (id == config.hoveredId) {
+            sf::CircleShape outline;
+            auto radius = shape.getRadius();
+            outline.setRadius(radius + queryRadius);
+            outline.setOrigin(radius + queryRadius, radius + queryRadius);
+            outline.setPosition(verlet.Position);
+            outline.setFillColor(sf::Color::Transparent);
+            outline.setOutlineColor(sf::Color::Red);
+            outline.setOutlineThickness(2);
+
+            config.Window.draw(outline);
+            auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+            auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, radius + queryRadius});
+            std::optional<float> minDistance;
+            std::optional<float> minOverlapp;
+            for (const auto &testPoint: query) {
+                const auto &id2 = testPoint.Data;
+                if (id != id2) {
+                    auto &shape = config.Ecs.Get<sf::CircleShape>(id2);
+                    shape.setFillColor(sf::Color::Green);
+                    auto &verlet2 = config.Ecs.Get<Verlet>(id2);
+                    // Draw line between the two points
+                    sf::Vertex line[] = {
+                            sf::Vertex(verlet.Position),
+                            sf::Vertex(verlet2.Position)
+                    };
+                    config.Window.draw(line, 2, sf::Lines);
+                    minDistance = std::min(minOverlapp.value_or(1000.0f), Distance(verlet.Position, verlet2.Position));
+                    minOverlapp = std::min(minOverlapp.value_or(1000.0f), Distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
+                }
+            }
+            sf::Text idText;
+            std::string idString = "id: " + std::to_string(id.GetId())+ "\ndistance: " + (minDistance ? std::to_string(*minDistance) : "nan") + "\noverlapp: " + (minOverlapp ? std::to_string(*minOverlapp) : "nan")  + "\npos:{x: " + std::to_string(verlet.Position.x) + ", y: " + std::to_string(verlet.Position.y) + "}\n" + "vel:{x: " + std::to_string(verlet.Velocity.x) + ", y: " + std::to_string(verlet.Velocity.y) + "}";
+            idText.setString(idString);
+            idText.setFont(*config.fpsText.getFont());
+            idText.setCharacterSize(15);
+            idText.setPosition(verlet.Position - sf::Vector2f{50, 150.0f});
+            config.Window.draw(idText);
+        }
+
         if (!config.worldBoundrarys.GetBox().contains(verlet.Position)) {
             entitiesToRemove.push_back(id);
         }
@@ -61,7 +116,7 @@ void CollisionSystem::Run(const Config &config) {
 
         // Check if there are any collisions in the time step
         for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
-            auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + 12});
+            auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
             if (auto sphereResults = SphereCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft)) {
                 collisionResult = min(sphereResults.value(), collisionResult);
             }

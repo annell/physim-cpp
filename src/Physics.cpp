@@ -26,12 +26,8 @@ const bool SphereSphereSweep
 
     auto point = DistanceLineToPoint(B0, B, closestPoint);
 
-    if (std::abs(dist) < ra + rb) {
-        u0 = point.t;
-        return true;
-    }
-    u0 = 1.0f;
-    return false;
+    u0 = point.t;
+    return dist <= ra + rb;
 }
 
 const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0) {

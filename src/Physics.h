@@ -7,6 +7,7 @@
 #include "Components.h"
 #include "../thirdParty/ecs/include/EntityComponentSystem.h"
 #include "../thirdParty/octree-cpp/src/OctreeCpp.h"
+#include <optional>
 
 struct CollisionResult {
     float tCollision = 100.0f;
