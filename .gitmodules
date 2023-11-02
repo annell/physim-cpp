@@ -1,7 +1,6 @@
-[submodule "ecs-cpp"]
-	path = thirdparty/ecs-cpp
+[submodule "thirdParty/ecs-cpp"]
+	path = thirdParty/ecs-cpp
 	url = git@github.com:annell/ecs-cpp.git
-
-[submodule "octree-cpp"]
-	path = thirdparty/octree-cpp
+[submodule "thirdParty/octree-cpp"]
+	path = thirdParty/octree-cpp
 	url = git@github.com:annell/octree-cpp.git
