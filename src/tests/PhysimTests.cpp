@@ -56,10 +56,11 @@ TEST(Physim, OverlappingCircles) {
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
     ASSERT_EQ(ecs.Size(), 3);
-    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-    ASSERT_FLOAT_EQ(results.tCollision, 0.0);
-    ASSERT_EQ(results.id1, ecs::EntityID(2));
-    ASSERT_EQ(results.id2, ecs::EntityID(1));
+    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_TRUE(results);
+    ASSERT_FLOAT_EQ(results->tCollision, 0.0);
+    ASSERT_EQ(results->id1, ecs::EntityID(2));
+    ASSERT_EQ(results->id2, ecs::EntityID(1));
 }
 
 TEST(Physim, CirclesMovingAway) {
@@ -72,8 +73,9 @@ TEST(Physim, CirclesMovingAway) {
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
     ASSERT_EQ(ecs.Size(), 3);
-    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-    ASSERT_FLOAT_EQ(results.tCollision, 100.0f);
+    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_TRUE(results);
+    ASSERT_FLOAT_EQ(results->tCollision, 100.0f);
 }
 
 TEST(Physim, CirclesOverlapping) {
@@ -85,10 +87,11 @@ TEST(Physim, CirclesOverlapping) {
     }
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
-    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-    ASSERT_FLOAT_EQ(results.tCollision, 0.0f);
-    ASSERT_EQ(results.id1, ecs::EntityID(2));
-    ASSERT_EQ(results.id2, ecs::EntityID(1));
+    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_TRUE(results);
+    ASSERT_FLOAT_EQ(results->tCollision, 0.0f);
+    ASSERT_EQ(results->id1, ecs::EntityID(2));
+    ASSERT_EQ(results->id2, ecs::EntityID(1));
 }
 
 TEST(Physim, CirclesMovingCloser) {
@@ -100,7 +103,8 @@ TEST(Physim, CirclesMovingCloser) {
     }
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
-    CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+    ASSERT_TRUE(results);
     //ASSERT_FLOAT_EQ(results.tCollision, 0.0f);
     //ASSERT_EQ(results.id1, ecs::EntityID(2));
     //ASSERT_EQ(results.id2, ecs::EntityID(1));
@@ -383,10 +387,11 @@ dt = 0.000561999972
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-        ASSERT_FLOAT_EQ(results.tCollision, 0.0);
-        ASSERT_EQ(results.id1, ecs::EntityID(1));
-        ASSERT_EQ(results.id2, ecs::EntityID(2));
+        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+        ASSERT_TRUE(results);
+        ASSERT_FLOAT_EQ(results->tCollision, 0.0);
+        ASSERT_EQ(results->id1, ecs::EntityID(1));
+        ASSERT_EQ(results->id2, ecs::EntityID(2));
 
     }
     {
@@ -401,10 +406,11 @@ dt = 0.000561999972
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-        ASSERT_FLOAT_EQ(results.tCollision, 0.0);
-        ASSERT_EQ(results.id1, ecs::EntityID(1));
-        ASSERT_EQ(results.id2, ecs::EntityID(2));
+        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+        ASSERT_TRUE(results);
+        ASSERT_FLOAT_EQ(results->tCollision, 0.0);
+        ASSERT_EQ(results->id1, ecs::EntityID(1));
+        ASSERT_EQ(results->id2, ecs::EntityID(2));
 
     }
 }
@@ -477,10 +483,11 @@ TEST(Physim, SphereCollisionError2) {
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        CollisionResult results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
-        ASSERT_FLOAT_EQ(results.tCollision, 0.0);
-        ASSERT_EQ(results.id1, ecs::EntityID(1));
-        ASSERT_EQ(results.id2, ecs::EntityID(2));
+        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius, id, dt);
+        ASSERT_TRUE(results);
+        ASSERT_FLOAT_EQ(results->tCollision, 0.0);
+        ASSERT_EQ(results->id1, ecs::EntityID(1));
+        ASSERT_EQ(results->id2, ecs::EntityID(2));
 
     }
 }

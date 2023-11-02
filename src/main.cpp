@@ -1,5 +1,5 @@
 #include <filesystem>
-#include "../thirdParty/ecs/include/EntityComponentSystem.h"
+#include "../thirdParty/ecs-cpp/src/EcsCpp.h"
 #include <random>
 #include "Components.h"
 #include "Util.h"

@@ -6,7 +6,7 @@
 
 #include "Components.h"
 #include "SFML/Graphics.hpp"
-#include "../thirdParty/ecs/include/EntityComponentSystem.h"
+#include "../thirdParty/ecs-cpp/src/EcsCpp.h"
 #include <type_traits>
 
 namespace sf {
