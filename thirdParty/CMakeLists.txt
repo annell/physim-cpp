@@ -1,3 +1,3 @@
 
-add_subdirectory(ecs)
+add_subdirectory(ecs-cpp)
 add_subdirectory(octree-cpp)
