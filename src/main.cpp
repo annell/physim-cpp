@@ -31,7 +31,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
             break;
         }
     }
-    auto id = ecs.BuildEntity(
+    ecs.BuildEntity(
             std::move(shape),
             Circle{.Radius=radius},
             Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos}
