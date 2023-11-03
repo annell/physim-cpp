@@ -8,6 +8,7 @@
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
     auto shape = sf::CircleShape(10);
+    float radius = shape.getRadius();
     auto midX = worldBoundrarys.Position.x + worldBoundrarys.Size.x / 2;
     auto midY = worldBoundrarys.Position.y + worldBoundrarys.Size.y / 2;
     shape.setPosition(midX, midY);
@@ -29,11 +30,8 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
             break;
         }
     }
-    auto id = ecs.AddEntity();
+    auto id = ecs.BuildEntity(std::move(shape), Circle{.Radius=radius}, Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos});
     ecs.Add(id, id);
-    ecs.Add(id, shape);
-    ecs.Add(id, Circle{.Radius=ecs.template Get<sf::CircleShape>(id).getRadius()});
-    ecs.Add(id, Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos});
 }
 
 int main() {
@@ -90,17 +88,13 @@ int main() {
         sf::Vector2f B = {worldBoundrarys.Size.x, 0};
         sf::Vector2f C = worldBoundrarys.Size;
         sf::Vector2f D = {0, worldBoundrarys.Size.y};
-        auto l1 = ecs.AddEntity();
-        ecs.Add(l1, Line{A, B, NormalBetweenPoints(A, B)});
+        auto l1 = ecs.BuildEntity(Line{A, B, NormalBetweenPoints(A, B)});
         ecs.Add(l1, l1);
-        auto l2 = ecs.AddEntity();
-        ecs.Add(l2, Line{B, C, NormalBetweenPoints(B, C)});
+        auto l2 = ecs.BuildEntity(Line{B, C, NormalBetweenPoints(B, C)});
         ecs.Add(l2, l2);
-        auto l3 = ecs.AddEntity();
-        ecs.Add(l3, Line{C, D, NormalBetweenPoints(C, D)});
+        auto l3 = ecs.BuildEntity(Line{C, D, NormalBetweenPoints(C, D)});
         ecs.Add(l3, l3);
-        auto l4 = ecs.AddEntity();
-        ecs.Add(l4, Line{D, A, NormalBetweenPoints(D, A)});
+        auto l4 = ecs.BuildEntity(Line{D, A, NormalBetweenPoints(D, A)});
         ecs.Add(l4, l4);
     }
     sf::Text fpsText;
