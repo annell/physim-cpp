@@ -89,12 +89,9 @@ Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
     Octree octree({{0,                      0,                      0},
                    {worldBoundrarys.Size.x, worldBoundrarys.Size.y, 0}});
 
-    for (auto &it: ecs) {
-        if (ecs.Has<Verlet>(it.id)) {
-            auto &verlet = ecs.Get<Verlet>(it.id);
-            if (worldBoundrarys.GetBox().contains(verlet.Position)) {
-                octree.Add({{verlet.Position.x, verlet.Position.y}, it.id});
-            }
+    for (const auto &[verlet, id]: ecs.GetSystem<Verlet, ecs::EntityID>()) {
+        if (worldBoundrarys.GetBox().contains(verlet.Position)) {
+            octree.Add({{verlet.Position.x, verlet.Position.y}, id});
         }
     }
 

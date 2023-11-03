@@ -87,16 +87,15 @@ int main() {
     if (!font.loadFromFile(path.generic_string() + "/../../resources/myfont.ttf")) {
         return -1;
     }
-    {
-        sf::Vector2f A = {0, 0};
-        sf::Vector2f B = {worldBoundrarys.Size.x, 0};
-        sf::Vector2f C = worldBoundrarys.Size;
-        sf::Vector2f D = {0, worldBoundrarys.Size.y};
-        auto l1 = ecs.BuildEntity(Line{A, B, NormalBetweenPoints(A, B)});
-        auto l2 = ecs.BuildEntity(Line{B, C, NormalBetweenPoints(B, C)});
-        auto l3 = ecs.BuildEntity(Line{C, D, NormalBetweenPoints(C, D)});
-        auto l4 = ecs.BuildEntity(Line{D, A, NormalBetweenPoints(D, A)});
-    }
+    sf::Vector2f A = {0, 0};
+    sf::Vector2f B = {worldBoundrarys.Size.x, 0};
+    sf::Vector2f C = worldBoundrarys.Size;
+    sf::Vector2f D = {0, worldBoundrarys.Size.y};
+    ecs.BuildEntity(Line{A, B, NormalBetweenPoints(A, B)});
+    ecs.BuildEntity(Line{B, C, NormalBetweenPoints(B, C)});
+    ecs.BuildEntity(Line{C, D, NormalBetweenPoints(C, D)});
+    ecs.BuildEntity(Line{D, A, NormalBetweenPoints(D, A)});
+
     sf::Text fpsText;
     fpsText.setFont(font);
     fpsText.setPosition(10, 10);
