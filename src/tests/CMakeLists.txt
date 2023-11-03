@@ -27,8 +27,8 @@ add_executable(${PROJECT_NAME}_Utiltest
         ../System.h
         ../Util.h
 )
-target_link_libraries(${PROJECT_NAME}_test GTest::gtest GTest::gtest_main sfml-graphics sfml-window)
-target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sfml-graphics sfml-window)
+target_link_libraries(${PROJECT_NAME}_test GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp)
+target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp)
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}_test)

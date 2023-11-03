@@ -31,7 +31,6 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
         }
     }
     auto id = ecs.BuildEntity(std::move(shape), Circle{.Radius=radius}, Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos});
-    ecs.Add(id, id);
 }
 
 int main() {
@@ -89,13 +88,9 @@ int main() {
         sf::Vector2f C = worldBoundrarys.Size;
         sf::Vector2f D = {0, worldBoundrarys.Size.y};
         auto l1 = ecs.BuildEntity(Line{A, B, NormalBetweenPoints(A, B)});
-        ecs.Add(l1, l1);
         auto l2 = ecs.BuildEntity(Line{B, C, NormalBetweenPoints(B, C)});
-        ecs.Add(l2, l2);
         auto l3 = ecs.BuildEntity(Line{C, D, NormalBetweenPoints(C, D)});
-        ecs.Add(l3, l3);
         auto l4 = ecs.BuildEntity(Line{D, A, NormalBetweenPoints(D, A)});
-        ecs.Add(l4, l4);
     }
     sf::Text fpsText;
     fpsText.setFont(font);
