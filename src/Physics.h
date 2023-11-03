@@ -17,6 +17,7 @@ struct CollisionResult {
 
 
 CollisionResult min(CollisionResult a, CollisionResult b);
+
 const bool SphereSphereSweep
         (
                 const float ra, //radius of sphere A
@@ -27,15 +28,18 @@ const bool SphereSphereSweep
                 const sf::Vector2f &B1, //current position of sphere B
                 float &u0 //normalized time of first collision
         );
-const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0);
-std::optional<CollisionResult> SphereCollision(ECS& ecs, const auto& query, const Verlet& verlet, float radius, ecs::EntityID id1, float tLeft) {
+
+const bool VerletSphereSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB, float &u0);
+
+std::optional<CollisionResult>
+SphereCollision(ECS &ecs, const auto &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft) {
     std::optional<CollisionResult> collisionResult;
     for (const auto &testPoint: query) {
-        const auto& id2 = testPoint.Data;
+        const auto &id2 = testPoint.Data;
         if (id1 != id2) {
             float normalizedCollisionT = 1.0f;
 
-            auto& verlet2 = ecs.Get<Verlet>(id2);
+            auto &verlet2 = ecs.Get<Verlet>(id2);
             const auto radius2 = ecs.Get<Circle>(id2).Radius;
             if (VerletSphereSweep(verlet, radius, verlet2,
                                   radius2, normalizedCollisionT)) {
@@ -50,6 +54,9 @@ std::optional<CollisionResult> SphereCollision(ECS& ecs, const auto& query, cons
     }
     return collisionResult;
 }
-bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0);
-std::optional<CollisionResult> LineCollision(ECS& ecs, const Verlet& verlet, float radius, float dt);
-const void RecalculateSphereCollision(Verlet& A, Verlet& B);
+
+bool IntersectMovingSpherePlane(float radius, const Verlet &verlet, const Line &line, float &u0);
+
+std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt);
+
+const void RecalculateSphereCollision(Verlet &A, Verlet &B);

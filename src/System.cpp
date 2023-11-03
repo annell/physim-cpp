@@ -9,10 +9,12 @@
 #include <cassert>
 
 static constexpr float queryRadius = 30.0f;
+
 void RenderSystem::Run(const Config &config) {
     config.Window.clear();
     std::vector<ecs::EntityID> entitiesToRemove;
-    std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position : std::optional<sf::Vector2f>();
+    std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position
+                                                              : std::optional<sf::Vector2f>();
     for (const auto &[shape, verlet, id]: config.Ecs.GetSystem<sf::CircleShape, Verlet, ecs::EntityID>()) {
         sf::RectangleShape line;
         line.setSize({2, shape.getRadius()});
@@ -64,11 +66,17 @@ void RenderSystem::Run(const Config &config) {
                     };
                     config.Window.draw(line, 2, sf::Lines);
                     minDistance = std::min(minOverlapp.value_or(1000.0f), Distance(verlet.Position, verlet2.Position));
-                    minOverlapp = std::min(minOverlapp.value_or(1000.0f), Distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
+                    minOverlapp = std::min(minOverlapp.value_or(1000.0f),
+                                           Distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
                 }
             }
             sf::Text idText;
-            std::string idString = "id: " + std::to_string(id.GetId())+ "\ndistance: " + (minDistance ? std::to_string(*minDistance) : "nan") + "\noverlapp: " + (minOverlapp ? std::to_string(*minOverlapp) : "nan")  + "\npos:{x: " + std::to_string(verlet.Position.x) + ", y: " + std::to_string(verlet.Position.y) + "}\n" + "vel:{x: " + std::to_string(verlet.Velocity.x) + ", y: " + std::to_string(verlet.Velocity.y) + "}";
+            std::string idString = "id: " + std::to_string(id.GetId()) + "\ndistance: " +
+                                   (minDistance ? std::to_string(*minDistance) : "nan") + "\noverlapp: " +
+                                   (minOverlapp ? std::to_string(*minOverlapp) : "nan") + "\npos:{x: " +
+                                   std::to_string(verlet.Position.x) + ", y: " + std::to_string(verlet.Position.y) +
+                                   "}\n" + "vel:{x: " + std::to_string(verlet.Velocity.x) + ", y: " +
+                                   std::to_string(verlet.Velocity.y) + "}";
             idText.setString(idString);
             idText.setFont(*config.fpsText.getFont());
             idText.setCharacterSize(15);
@@ -106,7 +114,7 @@ void CollisionSystem::Run(const Config &config) {
     float t0 = 0.0f;
     while (FloatLessThan(t0, config.dt)) {
         auto tLeft = config.dt - t0;
-        CollisionResult collisionResult = { tLeft };
+        CollisionResult collisionResult = {tLeft};
 
         // Move all objects forward the full time period
         for (const auto &[verlet]: config.Ecs.GetSystem<Verlet>()) {
@@ -116,7 +124,8 @@ void CollisionSystem::Run(const Config &config) {
 
         // Check if there are any collisions in the time step
         for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
-            auto query = octree.Query(Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+            auto query = octree.Query(
+                    Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
             if (auto sphereResults = SphereCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft)) {
                 collisionResult = min(sphereResults.value(), collisionResult);
             }
@@ -149,10 +158,12 @@ void CollisionSystem::Run(const Config &config) {
                 verlet1.Position -= line.Normal * overlapp;
             }
         } else {
-            auto& verlet1 = config.Ecs.Get<Verlet>(collisionResult.id1);
-            auto& verlet2 = config.Ecs.Get<Verlet>(collisionResult.id2);
+            auto &verlet1 = config.Ecs.Get<Verlet>(collisionResult.id1);
+            auto &verlet2 = config.Ecs.Get<Verlet>(collisionResult.id2);
             RecalculateSphereCollision(verlet1, verlet2);
-            auto overlapp = config.Ecs.Get<Circle>(collisionResult.id1).Radius + config.Ecs.Get<Circle>(collisionResult.id2).Radius - Distance(verlet1.Position, verlet2.Position);
+            auto overlapp = config.Ecs.Get<Circle>(collisionResult.id1).Radius +
+                            config.Ecs.Get<Circle>(collisionResult.id2).Radius -
+                            Distance(verlet1.Position, verlet2.Position);
             if (FloatGreaterThan(overlapp, 0.0f)) {
                 auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
                 verlet1.Position += normal * overlapp / 2.0f;

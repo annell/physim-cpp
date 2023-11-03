@@ -40,27 +40,30 @@ bool FloatLessThan(float a, float b);
 bool FloatGreaterThan(float a, float b);
 
 struct vec {
-  float x, y, z = 0;
+    float x, y, z = 0;
 
-  auto operator<=>(const vec &rhs) const = default;
+    auto operator<=>(const vec &rhs) const = default;
 };
 
 struct WorldBoundrarys {
-  sf::Vector2f Position;
-  sf::Vector2f Size;
+    sf::Vector2f Position;
+    sf::Vector2f Size;
 
-  [[nodiscard]] sf::FloatRect GetBox() const { return {Position, Size}; }
+    [[nodiscard]] sf::FloatRect GetBox() const { return {Position, Size}; }
 };
 
 using Octree = OctreeCpp<vec, ecs::EntityID>;
 
-Octree MakeOctree(ECS& ecs, const WorldBoundrarys& worldBoundrarys);
+Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys);
 
 struct IntersectionResult {
     float distance = 0.0f;
     float t = 0.0f; //Normalized time of closest point between Line and circle
 };
-IntersectionResult DistanceLineToPoint(const sf::Vector2f& A, const sf::Vector2f& B, const sf::Vector2f& C);
-double SegmentSegmentDistance(const sf::Vector2f& L1Start, const sf::Vector2f& L1End, const sf::Vector2f& L2Start, const sf::Vector2f& L2End, sf::Vector2f& Out);
+
+IntersectionResult DistanceLineToPoint(const sf::Vector2f &A, const sf::Vector2f &B, const sf::Vector2f &C);
+
+double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L1End, const sf::Vector2f &L2Start,
+                              const sf::Vector2f &L2End, sf::Vector2f &Out);
 
 float vectorAngle(float x, float y);

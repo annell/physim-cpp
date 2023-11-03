@@ -32,3 +32,4 @@ target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sf
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}_test)
+gtest_discover_tests(${PROJECT_NAME}_Utiltest)

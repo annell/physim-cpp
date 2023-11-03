@@ -30,11 +30,11 @@ const bool SphereSphereSweep
     return dist <= ra + rb;
 }
 
-const bool VerletSphereSweep(const Verlet& A, float radiusA, const Verlet& B, float radiusB, float& u0) {
+const bool VerletSphereSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB, float &u0) {
     return SphereSphereSweep(radiusA, A.PreviousPosition, A.Position, radiusB, B.PreviousPosition, B.Position, u0);
 }
 
-bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& line, float &u0) {
+bool IntersectMovingSpherePlane(float radius, const Verlet &verlet, const Line &line, float &u0) {
     // Compute distance of sphere center to plane
     sf::Vector2f closestPoint;
     auto dist = SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint);
@@ -48,7 +48,7 @@ bool IntersectMovingSpherePlane(float radius, const Verlet& verlet, const Line& 
     }
 }
 
-std::optional<CollisionResult> LineCollision(ECS& ecs, const Verlet& verlet, float radius, float dt) {
+std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt) {
     std::optional<CollisionResult> collisionResult;
     for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
         float t = 1.0f;
@@ -64,7 +64,7 @@ std::optional<CollisionResult> LineCollision(ECS& ecs, const Verlet& verlet, flo
     return collisionResult;
 }
 
-const void RecalculateSphereCollision(Verlet& A, Verlet& B) {
+const void RecalculateSphereCollision(Verlet &A, Verlet &B) {
     auto normal = Normalize(A.Position - B.Position);
 
     auto a1 = Projection(A.Velocity, normal);

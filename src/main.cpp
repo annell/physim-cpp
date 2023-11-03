@@ -18,9 +18,10 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     shape.setOrigin(shape.getRadius(), shape.getRadius());
     while (true) {
         bool collision = false;
-        for (const auto &[shape2] : ecs.template GetSystem<sf::CircleShape>()) {
+        for (const auto &[shape2]: ecs.template GetSystem<sf::CircleShape>()) {
             if (Collision(shape, shape2)) {
-                pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20), RandomFloat(20, worldBoundrarys.Size.y - 20)};
+                pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20),
+                                   RandomFloat(20, worldBoundrarys.Size.y - 20)};
                 shape.setPosition(pos);
                 collision = true;
                 break;
@@ -30,7 +31,11 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
             break;
         }
     }
-    auto id = ecs.BuildEntity(std::move(shape), Circle{.Radius=radius}, Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos});
+    auto id = ecs.BuildEntity(
+            std::move(shape),
+            Circle{.Radius=radius},
+            Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos}
+    );
 }
 
 int main() {
@@ -70,7 +75,7 @@ int main() {
     controls.RegisterEvent(sf::Event::MouseMoved, [&](auto e) {
         auto pos = sf::Vector2f{static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y)};
         hoveredId = ecs::EntityID();
-        for (const auto &[id, shape] : ecs.template GetSystem<ecs::EntityID, sf::CircleShape>()) {
+        for (const auto &[id, shape]: ecs.template GetSystem<ecs::EntityID, sf::CircleShape>()) {
             if (Distance(pos, shape.getPosition()) < shape.getRadius()) {
                 hoveredId = id;
                 break;
