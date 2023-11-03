@@ -135,6 +135,7 @@ void CollisionSystem::Run(const Config &config) {
             }
         }
 
+        // Break if no collision was found
         if (!collisionResult.id1 || !collisionResult.id2) {
             break;
         }
@@ -143,14 +144,12 @@ void CollisionSystem::Run(const Config &config) {
         for (const auto &[verlet]: config.Ecs.GetSystem<Verlet>()) {
             verlet.Revert();
             verlet.Update(collisionResult.tCollision);
-            verlet.PreviousPosition = verlet.Position;
         }
 
         if (config.Ecs.Has<Line>(collisionResult.id2)) {
             auto &verlet1 = config.Ecs.Get<Verlet>(collisionResult.id1);
             auto radius1 = config.Ecs.Get<Circle>(collisionResult.id1).Radius;
             verlet1.Velocity -= Reflect(verlet1.Velocity, config.Ecs.Get<Line>(collisionResult.id2).Normal);
-            auto radius2 = config.Ecs.Get<Circle>(collisionResult.id1).Radius;
             auto line = config.Ecs.Get<Line>(collisionResult.id2);
             auto point = DistanceLineToPoint(line.Start, line.End, verlet1.Position);
             auto overlapp = radius1 - point.distance;
