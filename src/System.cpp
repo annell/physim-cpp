@@ -109,10 +109,9 @@ void GravitySystem::Run(const Config &config) {
 }
 
 void CollisionSystem::Run(const Config &config) {
-    auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-
     float t0 = 0.0f;
     while (FloatLessThan(t0, config.dt)) {
+        auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
         auto tLeft = config.dt - t0;
         CollisionResult collisionResult = {tLeft};
 
@@ -147,21 +146,20 @@ void CollisionSystem::Run(const Config &config) {
         }
 
         if (config.Ecs.Has<Line>(collisionResult.id2)) {
-            auto &verlet1 = config.Ecs.Get<Verlet>(collisionResult.id1);
-            auto radius1 = config.Ecs.Get<Circle>(collisionResult.id1).Radius;
-            verlet1.Velocity -= Reflect(verlet1.Velocity, config.Ecs.Get<Line>(collisionResult.id2).Normal);
+            auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
             auto line = config.Ecs.Get<Line>(collisionResult.id2);
+            verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal);
             auto point = DistanceLineToPoint(line.Start, line.End, verlet1.Position);
-            auto overlapp = radius1 - point.distance;
+            auto overlapp = circle1.Radius - point.distance;
             if (FloatGreaterThan(overlapp, 0.0f)) {
                 verlet1.Position -= line.Normal * overlapp;
             }
         } else {
-            auto &verlet1 = config.Ecs.Get<Verlet>(collisionResult.id1);
-            auto &verlet2 = config.Ecs.Get<Verlet>(collisionResult.id2);
+            auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
+            auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id2);
             RecalculateSphereCollision(verlet1, verlet2);
-            auto overlapp = config.Ecs.Get<Circle>(collisionResult.id1).Radius +
-                            config.Ecs.Get<Circle>(collisionResult.id2).Radius -
+            auto overlapp = circle1.Radius +
+                            circle2.Radius -
                             Distance(verlet1.Position, verlet2.Position);
             if (FloatGreaterThan(overlapp, 0.0f)) {
                 auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
