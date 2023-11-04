@@ -150,10 +150,14 @@ void ResolveLineCollision(const CollisionSystem::Config& config, const Collision
     auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
     auto line = config.Ecs.Get<Line>(collisionResult.id2);
     verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
-    auto point = DistanceLineToPoint(line.Start, line.End, verlet1.Position);
-    auto overlapp = circle1.Radius - point.distance;
-    if (FloatGreaterThan(overlapp, 0.0f)) {
-        verlet1.Position -= line.Normal * overlapp;
+    sf::Vector2f closestPoint;
+    float distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
+    auto overlapp = circle1.Radius - distance;
+    while (not FloatEqual(overlapp, 0.0f) && FloatGreaterThan(overlapp, 0.0f)) {
+        auto NewPos = verlet1.Position - line.Normal * (overlapp + 1.0f);
+        verlet1.Position = NewPos;
+        distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
+        overlapp = circle1.Radius - distance;
     }
 }
 
@@ -164,10 +168,13 @@ void ResolveCircleCollision(const CollisionSystem::Config& config, const Collisi
     auto overlapp = circle1.Radius +
                     circle2.Radius -
                     Distance(verlet1.Position, verlet2.Position);
-    if (FloatGreaterThan(overlapp, 0.0f)) {
+    while (not FloatEqual(overlapp, 0.0f) && FloatGreaterThan(overlapp, 0.0f)) {
         auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
-        verlet1.Position += normal * (overlapp + 1.5f) / 2.0f;
-        verlet2.Position -= normal * (overlapp + 1.5f) / 2.0f;
+        verlet1.Position += normal * (overlapp + 1.0f);
+        verlet2.Position -= normal * (overlapp + 1.0f);
+        overlapp = circle1.Radius +
+                    circle2.Radius -
+                    Distance(verlet1.Position, verlet2.Position);
     }
 }
 
@@ -175,6 +182,11 @@ void CollisionSystem::Run(const Config &config) {
     auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
 
     float t0 = 0.0f;
+    if (config.dt > 1) {
+        std::cout << "dt is to big" << std::endl;
+        return;
+    }
+
     while (t0 < config.dt) {
         auto tLeft = config.dt - t0;
         StepForward(config.Ecs.GetSystem<Verlet>(), tLeft);
@@ -184,7 +196,10 @@ void CollisionSystem::Run(const Config &config) {
             break;
         }
 
-        RollBack(config.Ecs.GetSystem<Verlet>(), collisionResult->tCollision);
+        //if (collisionResult->tCollision < tLeft) {
+            collisionResult->tCollision *= 0.95;
+            RollBack(config.Ecs.GetSystem<Verlet>(), collisionResult->tCollision);
+        //}
 
         if (collisionResult->Type == CollisionType::Line) {
             ResolveLineCollision(config, *collisionResult);

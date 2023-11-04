@@ -64,6 +64,6 @@ const void RecalculateCircleCollision(Verlet &A, Verlet &B) {
 
     auto optimizedP = (2.0f * (a1 - a2)) / (A.Mass + B.Mass);
 
-    A.Velocity -= optimizedP * B.Mass * B.Bounciness;
-    B.Velocity += optimizedP * A.Mass * A.Bounciness;
+    A.Velocity -= optimizedP * B.Mass * A.Bounciness;
+    B.Velocity += optimizedP * A.Mass * B.Bounciness;
 }
