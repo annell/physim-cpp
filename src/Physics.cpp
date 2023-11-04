@@ -7,39 +7,32 @@ CollisionResult min(CollisionResult a, CollisionResult b) {
     return b;
 }
 
-const bool SphereSphereSweep
+std::optional<float> CircleCircleSweep
         (
                 const float ra, //radius of sphere A
                 const sf::Vector2f &A0, //Current pos sphere A
                 const sf::Vector2f &A1, //Next pos sphere A
                 const float rb, //radius of sphere B
                 const sf::Vector2f &B0, //Current pos sphere B
-                const sf::Vector2f &B1, //Next pos sphere B
-                float &u0 //normalized time of first collision
+                const sf::Vector2f &B1 //Next pos sphere B
         ) {
     sf::Vector2f closestPoint;
-    auto dist = SegmentSegmentDistance(A0, A1, B0, B1, closestPoint);
-
-    auto Avel = A0 - A1;
-    auto Bvel = B0 - B1;
-    auto B = Avel - Bvel;
-
-    auto point = DistanceLineToPoint(B0, B, closestPoint);
-
-    u0 = point.t;
-    return dist <= ra + rb;
+    auto dist = std::abs(SegmentSegmentDistance(A0, A1, B0, B1, closestPoint));
+    if (dist <= ra + rb) {
+        return dist / (ra + rb);
+    }
+    return std::nullopt;
 }
 
-const bool VerletSphereSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB, float &u0) {
-    return SphereSphereSweep(radiusA, A.PreviousPosition, A.Position, radiusB, B.PreviousPosition, B.Position, u0);
+std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB) {
+    return CircleCircleSweep(radiusA, A.PreviousPosition, A.Position, radiusB, B.PreviousPosition, B.Position);
 }
 
-bool IntersectMovingSpherePlane(float radius, const Verlet &verlet, const Line &line, float &u0) {
-    // Compute distance of sphere center to plane
+bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0) {
     sf::Vector2f closestPoint;
-    auto dist = SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint);
+    auto dist = std::abs(SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint));
 
-    if (std::abs(dist) >= radius) {
+    if (dist >= radius) {
         u0 = 1.0f;
         return false;
     } else {
@@ -52,19 +45,18 @@ std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, flo
     std::optional<CollisionResult> collisionResult;
     for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
         float t = 1.0f;
-        if (IntersectMovingSpherePlane(radius, verlet, line, t)) {
-            t *= dt;
-            if (!collisionResult) {
-                collisionResult = CollisionResult{.tCollision=t, .id2=id2};
-            } else if (t <= collisionResult->tCollision) {
-                collisionResult = CollisionResult{.tCollision=t, .id2=id2};
-            }
+        if (!IntersectMovingCircleLine(radius, verlet, line, t)) {
+            continue;
+        }
+        t *= dt;
+        if (!collisionResult || t <= collisionResult->tCollision) {
+            collisionResult = CollisionResult{.tCollision=t, .id2=id2, .Type=CollisionType::Line};
         }
     }
     return collisionResult;
 }
 
-const void RecalculateSphereCollision(Verlet &A, Verlet &B) {
+const void RecalculateCircleCollision(Verlet &A, Verlet &B) {
     auto normal = Normalize(A.Position - B.Position);
 
     auto a1 = Projection(A.Velocity, normal);
@@ -72,6 +64,6 @@ const void RecalculateSphereCollision(Verlet &A, Verlet &B) {
 
     auto optimizedP = (2.0f * (a1 - a2)) / (A.Mass + B.Mass);
 
-    A.Velocity -= optimizedP * B.Mass;
-    B.Velocity += optimizedP * A.Mass;
+    A.Velocity -= optimizedP * B.Mass * B.Bounciness;
+    B.Velocity += optimizedP * A.Mass * A.Bounciness;
 }

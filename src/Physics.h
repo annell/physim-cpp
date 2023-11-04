@@ -9,54 +9,62 @@
 #include <OctreeCpp.h>
 #include <optional>
 
+enum class CollisionType {
+    Circle,
+    Line
+};
+
 struct CollisionResult {
     float tCollision = 100.0f;
     ecs::EntityID id1;
     ecs::EntityID id2;
+
+    std::optional<CollisionType> Type;
 };
 
 
 CollisionResult min(CollisionResult a, CollisionResult b);
 
-const bool SphereSphereSweep
+std::optional<float> CircleCircleSweep
         (
                 const float ra, //radius of sphere A
                 const sf::Vector2f &A0, //previous position of sphere A
                 const sf::Vector2f &A1, //current position of sphere A
                 const float rb, //radius of sphere B
                 const sf::Vector2f &B0, //previous position of sphere B
-                const sf::Vector2f &B1, //current position of sphere B
-                float &u0 //normalized time of first collision
+                const sf::Vector2f &B1 //current position of sphere B
         );
 
-const bool VerletSphereSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB, float &u0);
+std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB);
 
 std::optional<CollisionResult>
-SphereCollision(ECS &ecs, const auto &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft) {
+CircleCollision(ECS &ecs, const auto &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft) {
     std::optional<CollisionResult> collisionResult;
     for (const auto &testPoint: query) {
         const auto &id2 = testPoint.Data;
-        if (id1 != id2) {
-            float normalizedCollisionT = 1.0f;
+        if (id1 == id2) {
+            continue;
+        }
 
-            auto &verlet2 = ecs.Get<Verlet>(id2);
-            const auto radius2 = ecs.Get<Circle>(id2).Radius;
-            if (VerletSphereSweep(verlet, radius, verlet2,
-                                  radius2, normalizedCollisionT)) {
-                auto t = normalizedCollisionT * tLeft;
-                if (!collisionResult) {
-                    collisionResult = CollisionResult{t, id1, id2};
-                } else if (t <= collisionResult->tCollision) {
-                    collisionResult = CollisionResult{t, id1, id2};
-                }
-            }
+        auto [verlet2, circle2] = ecs.GetSeveral<Verlet, Circle>(id2);
+        auto sweepResults = VerletCircleSweep(verlet, radius, verlet2,
+                                              circle2.Radius);
+        if (!sweepResults) {
+            continue;
+        }
+
+        auto t = *sweepResults * tLeft;
+        if (!collisionResult) {
+            collisionResult = CollisionResult{t, id1, id2, CollisionType::Circle};
+        } else if (t < collisionResult->tCollision) {
+            collisionResult = CollisionResult{t, id1, id2, CollisionType::Circle};
         }
     }
     return collisionResult;
 }
 
-bool IntersectMovingSpherePlane(float radius, const Verlet &verlet, const Line &line, float &u0);
+bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0);
 
 std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt);
 
-const void RecalculateSphereCollision(Verlet &A, Verlet &B);
+const void RecalculateCircleCollision(Verlet &A, Verlet &B);

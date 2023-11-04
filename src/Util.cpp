@@ -144,7 +144,7 @@ double PointToPointDistanceSquared(double p1x, double p1y, double p2x, double p2
 double PointSegmentDistanceSquared(double px, double py,
                                    double p1x, double p1y,
                                    double p2x, double p2y,
-                                   double &t,
+                                   float &t,
                                    float &qx, float &qy) {
     double dx = p2x - p1x;
     double dy = p2y - p1y;
@@ -210,10 +210,10 @@ double SegmentSegmentDistanceSquared(double p1x, double p1y,
     // If 1 or both segments are shorter than this min length, treat them as a single point.
     double segLen12Squared = PointToPointDistanceSquared(p1x, p1y, p2x, p2y);
     double segLen34Squared = PointToPointDistanceSquared(p3x, p3y, p4x, p4y);
-    double t = 0.0;
+    float t = 0.0;
     double minDist2 = 1E+38;
     float tmpQx, tmpQy = 0;
-    double tmpD2 = 0;
+    float tmpD2 = 0;
     if (segLen12Squared <= EPSILON_MIN_VERTEX_DISTANCE_SQUARED) {
         qx = p1x;
         qy = p1y;

@@ -56,7 +56,7 @@ TEST(Physim, OverlappingCircles) {
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
     ASSERT_EQ(ecs.Size(), 3);
-    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
+    auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
                                    id, dt);
     ASSERT_TRUE(results);
     ASSERT_FLOAT_EQ(results->tCollision, 0.0);
@@ -74,7 +74,7 @@ TEST(Physim, CirclesMovingAway) {
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
     ASSERT_EQ(ecs.Size(), 3);
-    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
+    auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
                                    id, dt);
     ASSERT_TRUE(results);
     ASSERT_FLOAT_EQ(results->tCollision, 100.0f);
@@ -89,7 +89,7 @@ TEST(Physim, CirclesOverlapping) {
     }
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
-    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
+    auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
                                    id, dt);
     ASSERT_TRUE(results);
     ASSERT_FLOAT_EQ(results->tCollision, 0.0f);
@@ -106,7 +106,7 @@ TEST(Physim, CirclesMovingCloser) {
     }
     auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                   {700, 700}});
-    auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
+    auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id), ecs.Get<Circle>(id).Radius,
                                    id, dt);
     ASSERT_TRUE(results);
     //ASSERT_FLOAT_EQ(results.tCollision, 0.0f);
@@ -202,7 +202,7 @@ TEST(Physim, SphereSphereSweep1) {
     float ra = 1;
     float rb = 1;
     float u0 = 0;
-    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_TRUE(CircleCircleSweep(ra, a0, a1, rb, b0, b1, u0));
     ASSERT_FLOAT_EQ(u0, 0.0f);
 }
 
@@ -214,7 +214,7 @@ TEST(Physim, SphereSphereSweep2) {
     float ra = 1;
     float rb = 1;
     float u0 = 0;
-    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_TRUE(CircleCircleSweep(ra, a0, a1, rb, b0, b1, u0));
     ASSERT_FLOAT_EQ(u0, 0.99800396f);
 }
 
@@ -226,7 +226,7 @@ TEST(Physim, SphereSphereSweep3) {
     float ra = 1;
     float rb = 1;
     float u0 = 0;
-    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_TRUE(CircleCircleSweep(ra, a0, a1, rb, b0, b1, u0));
     ASSERT_FLOAT_EQ(u0, 0.5f);
 }
 
@@ -238,7 +238,7 @@ TEST(Physim, SphereSphereSweep4) {
     float ra = 1;
     float rb = 1;
     float u0 = 0;
-    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_TRUE(CircleCircleSweep(ra, a0, a1, rb, b0, b1, u0));
     ASSERT_FLOAT_EQ(u0, 0.7647059f);
 }
 
@@ -250,14 +250,14 @@ TEST(Physim, SphereSphereSweep5) {
     float ra = 1;
     float rb = 1;
     float u0 = 0;
-    ASSERT_TRUE(SphereSphereSweep(ra, a0, a1, rb, b0, b1, u0));
+    ASSERT_TRUE(CircleCircleSweep(ra, a0, a1, rb, b0, b1, u0));
     ASSERT_FLOAT_EQ(u0, 0.18861209f);
 }
 
 TEST(Physim, RecalculateSphereCollision1) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, -1}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -267,7 +267,7 @@ TEST(Physim, RecalculateSphereCollision1) {
 TEST(Physim, RecalculateSphereCollision2) {
     Verlet v1 = {.Position={2, 0}, .Velocity={0, 0}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, 0.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -277,7 +277,7 @@ TEST(Physim, RecalculateSphereCollision2) {
 TEST(Physim, RecalculateSphereCollision3) {
     Verlet v1 = {.Position={2, 0}, .Velocity={-0.5f, 0.5f}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0.5f, -0.5f}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.5f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.5f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, -0.5f);
@@ -287,7 +287,7 @@ TEST(Physim, RecalculateSphereCollision3) {
 TEST(Physim, RecalculateSphereCollision4) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, 0.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -297,7 +297,7 @@ TEST(Physim, RecalculateSphereCollision4) {
 TEST(Physim, RecalculateSphereCollision5) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, -1}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -311,7 +311,7 @@ TEST(Physim, RecalculateSphereCollision6) {
     Verlet v2 = {.Position={1, 2}, .Velocity={0, -1}};
     ASSERT_FLOAT_EQ(Length(v1.Velocity), 1.0f);
     ASSERT_FLOAT_EQ(Length(v2.Velocity), 1.0f);
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, -0.8f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.6f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.8f);
@@ -324,7 +324,7 @@ TEST(Physim, RecalculateSphereCollision6) {
 TEST(Physim, RecalculateSphereCollision7) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}, .Mass{0.5f}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}, .Mass{1.0f}};
-    RecalculateSphereCollision(v1, v2);
+    RecalculateCircleCollision(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.33333333f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -391,7 +391,7 @@ dt = 0.000561999972
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
+        auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
                                        ecs.Get<Circle>(id).Radius, id, dt);
         ASSERT_TRUE(results);
         ASSERT_FLOAT_EQ(results->tCollision, 0.0);
@@ -411,7 +411,7 @@ dt = 0.000561999972
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
+        auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
                                        ecs.Get<Circle>(id).Radius, id, dt);
         ASSERT_TRUE(results);
         ASSERT_FLOAT_EQ(results->tCollision, 0.0);
@@ -489,7 +489,7 @@ TEST(Physim, SphereCollisionError2) {
         auto octree = MakeOctree(ecs, WorldBoundrarys{{0,   0},
                                                       {700, 700}});
         ASSERT_EQ(ecs.Size(), 2);
-        auto results = SphereCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
+        auto results = CircleCollision(ecs, octree.Query(Octree::All{}), ecs.Get<Verlet>(id),
                                        ecs.Get<Circle>(id).Radius, id, dt);
         ASSERT_TRUE(results);
         ASSERT_FLOAT_EQ(results->tCollision, 0.0);

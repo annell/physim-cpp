@@ -108,67 +108,91 @@ void GravitySystem::Run(const Config &config) {
     }
 }
 
+std::optional<CollisionResult> CheckCollisions(const CollisionSystem::Config &config, const auto& octree, float tLeft) {
+    std::optional<CollisionResult> collision;
+    for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
+        auto query = octree.Query(
+                Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+        if (auto circleResults = CircleCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft)) {
+            if (!collision) {
+                collision = circleResults;
+                continue;
+            }
+            collision = min(circleResults.value(), collision.value());
+        }
+        if (auto lineResults = LineCollision(config.Ecs, verlet, circle.Radius, tLeft)) {
+            lineResults->id1 = id;
+            if (!collision) {
+                collision = lineResults;
+                continue;
+            }
+            collision = min(lineResults.value(), collision.value());
+        }
+    }
+    return collision;
+}
+
+void StepForward(auto system, float tLeft) {
+    for (const auto &[verlet]: system) {
+        verlet.PreviousPosition = verlet.Position;
+        verlet.Update(tLeft);
+    }
+}
+
+void RollBack(auto system, float dt) {
+    for (const auto &[verlet]: system) {
+        verlet.Revert();
+        verlet.Update(dt);
+    }
+}
+
+void ResolveLineCollision(const CollisionSystem::Config& config, const CollisionResult& collisionResult) {
+    auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
+    auto line = config.Ecs.Get<Line>(collisionResult.id2);
+    verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
+    auto point = DistanceLineToPoint(line.Start, line.End, verlet1.Position);
+    auto overlapp = circle1.Radius - point.distance;
+    if (FloatGreaterThan(overlapp, 0.0f)) {
+        verlet1.Position -= line.Normal * overlapp;
+    }
+}
+
+void ResolveCircleCollision(const CollisionSystem::Config& config, const CollisionResult& collisionResult) {
+    auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
+    auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id2);
+    RecalculateCircleCollision(verlet1, verlet2);
+    auto overlapp = circle1.Radius +
+                    circle2.Radius -
+                    Distance(verlet1.Position, verlet2.Position);
+    if (FloatGreaterThan(overlapp, 0.0f)) {
+        auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
+        verlet1.Position += normal * (overlapp + 1.5f) / 2.0f;
+        verlet2.Position -= normal * (overlapp + 1.5f) / 2.0f;
+    }
+}
+
 void CollisionSystem::Run(const Config &config) {
+    auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+
     float t0 = 0.0f;
-    while (FloatLessThan(t0, config.dt)) {
-        auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+    while (t0 < config.dt) {
         auto tLeft = config.dt - t0;
-        CollisionResult collisionResult = {tLeft};
+        StepForward(config.Ecs.GetSystem<Verlet>(), tLeft);
+        auto collisionResult = CheckCollisions(config, octree, tLeft);
 
-        // Move all objects forward the full time period
-        for (const auto &[verlet]: config.Ecs.GetSystem<Verlet>()) {
-            verlet.PreviousPosition = verlet.Position;
-            verlet.Update(collisionResult.tCollision);
-        }
-
-        // Check if there are any collisions in the time step
-        for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
-            auto query = octree.Query(
-                    Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
-            if (auto sphereResults = SphereCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft)) {
-                collisionResult = min(sphereResults.value(), collisionResult);
-            }
-            if (auto lineResults = LineCollision(config.Ecs, verlet, circle.Radius, tLeft)) {
-                lineResults->id1 = id;
-                collisionResult = min(lineResults.value(), collisionResult);
-            }
-        }
-
-        // Break if no collision was found
-        if (!collisionResult.id1 || !collisionResult.id2) {
+        if (!collisionResult) {
             break;
         }
 
-        // Roll back and move objects to the collision point
-        for (const auto &[verlet]: config.Ecs.GetSystem<Verlet>()) {
-            verlet.Revert();
-            verlet.Update(collisionResult.tCollision);
-        }
+        RollBack(config.Ecs.GetSystem<Verlet>(), collisionResult->tCollision);
 
-        if (config.Ecs.Has<Line>(collisionResult.id2)) {
-            auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
-            auto line = config.Ecs.Get<Line>(collisionResult.id2);
-            verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal);
-            auto point = DistanceLineToPoint(line.Start, line.End, verlet1.Position);
-            auto overlapp = circle1.Radius - point.distance;
-            if (FloatGreaterThan(overlapp, 0.0f)) {
-                verlet1.Position -= line.Normal * overlapp;
-            }
+        if (collisionResult->Type == CollisionType::Line) {
+            ResolveLineCollision(config, *collisionResult);
         } else {
-            auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
-            auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(collisionResult.id2);
-            RecalculateSphereCollision(verlet1, verlet2);
-            auto overlapp = circle1.Radius +
-                            circle2.Radius -
-                            Distance(verlet1.Position, verlet2.Position);
-            if (FloatGreaterThan(overlapp, 0.0f)) {
-                auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
-                verlet1.Position += normal * overlapp / 2.0f;
-                verlet2.Position -= normal * overlapp / 2.0f;
-            }
+            ResolveCircleCollision(config, *collisionResult);
         }
 
-        t0 += collisionResult.tCollision;
+        t0 += collisionResult->tCollision;
     }
 }
 
