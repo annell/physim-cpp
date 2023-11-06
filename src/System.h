@@ -6,7 +6,7 @@
 
 #include "Components.h"
 #include "SFML/Graphics.hpp"
-#include <EcsCpp.h>
+#include <ecs-cpp/EcsCpp.h>
 #include <type_traits>
 
 namespace sf {

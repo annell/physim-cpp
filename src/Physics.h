@@ -5,8 +5,8 @@
 
 #include "Util.h"
 #include "Components.h"
-#include <EcsCpp.h>
-#include <OctreeCpp.h>
+#include <ecs-cpp/EcsCpp.h>
+#include <octree-cpp/OctreeCpp.h>
 #include <optional>
 
 enum class CollisionType {

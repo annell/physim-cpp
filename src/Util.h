@@ -5,7 +5,7 @@
 #pragma once
 
 #include "System.h"
-#include <OctreeCpp.h>
+#include <octree-cpp/OctreeCpp.h>
 
 float RandomFloat(float min, float max);
 

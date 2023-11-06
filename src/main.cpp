@@ -1,5 +1,5 @@
 #include <filesystem>
-#include <EcsCpp.h>
+#include <ecs-cpp/EcsCpp.h>
 #include <random>
 #include "Components.h"
 #include "Util.h"
