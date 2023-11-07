@@ -7,6 +7,7 @@
 #include "Components.h"
 #include "SFML/Graphics.hpp"
 #include <ecs-cpp/EcsCpp.h>
+#include <octree-cpp/OctreeCpp.h>
 #include <type_traits>
 
 namespace sf {
@@ -14,7 +15,14 @@ namespace sf {
 }
 struct WorldBoundrarys;
 
-using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID>;
+struct vec {
+    float x, y, z = 0;
+
+    auto operator<=>(const vec &rhs) const = default;
+};
+
+using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
+using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID, octreeQuery>;
 
 namespace RenderSystem {
     struct Config {
@@ -30,7 +38,17 @@ namespace RenderSystem {
     void Run(const Config &);
 }
 
-namespace CollisionSystem {
+namespace ContinousCollisionSystem {
+    struct Config {
+        ECS &Ecs;
+        WorldBoundrarys &worldBoundrarys;
+        float dt = 0.0f;
+    };
+
+    void Run(const Config &);
+}
+
+namespace DiscreteCollisionSystem {
     struct Config {
         ECS &Ecs;
         WorldBoundrarys &worldBoundrarys;

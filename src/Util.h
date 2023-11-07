@@ -39,12 +39,6 @@ bool FloatLessThan(float a, float b);
 
 bool FloatGreaterThan(float a, float b);
 
-struct vec {
-    float x, y, z = 0;
-
-    auto operator<=>(const vec &rhs) const = default;
-};
-
 struct WorldBoundrarys {
     sf::Vector2f Position;
     sf::Vector2f Size;

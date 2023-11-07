@@ -34,7 +34,8 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     ecs.BuildEntity(
             std::move(shape),
             Circle{.Radius=radius},
-            Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos}
+            Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos},
+            octreeQuery{}
     );
 }
 
@@ -118,7 +119,7 @@ int main() {
             fps = "Paused";
         } else {
             if (timer > 0.05f) {
-                if (ecs.Size() < 20) {
+                if (ecs.Size() < 150) {
                     AddCircle(ecs, worldBoundrarys);
                 }
                 timer = 0;
@@ -128,7 +129,14 @@ int main() {
                     .Ecs=ecs,
                     .dt=dt
             });
-            CollisionSystem::Run(CollisionSystem::Config{
+            /*
+            ContinousCollisionSystem::Run(ContinousCollisionSystem::Config{
+                    .Ecs=ecs,
+                    .worldBoundrarys=worldBoundrarys,
+                    .dt=dt
+            });
+             */
+            DiscreteCollisionSystem::Run(DiscreteCollisionSystem::Config{
                     .Ecs=ecs,
                     .worldBoundrarys=worldBoundrarys,
                     .dt=dt
