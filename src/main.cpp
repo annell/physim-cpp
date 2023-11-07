@@ -5,6 +5,7 @@
 #include "Util.h"
 #include "System.h"
 #include "Controls.h"
+#include <SFMLMath.hpp>
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
     auto shape = sf::CircleShape(10);
@@ -77,7 +78,7 @@ int main() {
         auto pos = sf::Vector2f{static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y)};
         hoveredId = ecs::EntityID();
         for (const auto &[id, shape]: ecs.template GetSystem<ecs::EntityID, sf::CircleShape>()) {
-            if (Distance(pos, shape.getPosition()) < shape.getRadius()) {
+            if (sf::distance(pos, shape.getPosition()) < shape.getRadius()) {
                 hoveredId = id;
                 break;
             }

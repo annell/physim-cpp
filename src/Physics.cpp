@@ -1,4 +1,5 @@
 #include "Physics.h"
+#include <SFMLMath.hpp>
 
 CollisionResult min(CollisionResult a, CollisionResult b) {
     if (FloatEqual(a.tCollision, b.tCollision) || FloatLessThan(a.tCollision, b.tCollision)) {
@@ -36,7 +37,7 @@ bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &l
         u0 = 1.0f;
         return false;
     } else {
-        u0 = Distance(verlet.PreviousPosition, closestPoint) / Distance(verlet.PreviousPosition, verlet.Position);
+        u0 = sf::distance(verlet.PreviousPosition, closestPoint) / sf::distance(verlet.PreviousPosition, verlet.Position);
         return true;
     }
 }
@@ -57,10 +58,10 @@ std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, flo
 }
 
 const void RecalculateCircleCollision(Verlet &A, Verlet &B) {
-    auto normal = Normalize(A.Position - B.Position);
+    auto normal = sf::getNormalized(A.Position - B.Position);
 
-    auto a1 = Projection(A.Velocity, normal);
-    auto a2 = Projection(B.Velocity, normal);
+    auto a1 = sf::projection(A.Velocity, normal);
+    auto a2 = sf::projection(B.Velocity, normal);
 
     auto optimizedP = (2.0f * (a1 - a2)) / (A.Mass + B.Mass);
 

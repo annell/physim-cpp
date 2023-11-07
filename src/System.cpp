@@ -7,6 +7,7 @@
 #include "Physics.h"
 #include <iostream>
 #include <cassert>
+#include <SFMLMath.hpp>
 
 static constexpr float queryRadius = 50.0f;
 
@@ -19,14 +20,14 @@ void RenderSystem::Run(const Config &config) {
         sf::RectangleShape line;
         line.setSize({2, shape.getRadius()});
         line.setPosition(verlet.Position - sf::Vector2f{1, 0});
-        line.setRotation(vectorAngle(verlet.Velocity.x, verlet.Velocity.y) - 90);
+        line.setRotation(sf::getRotationAngle(verlet.Velocity) - 90);
         line.setFillColor(sf::Color::Magenta);
         shape.setPosition(verlet.Position);
         if (id == config.hoveredId) {
             shape.setFillColor(sf::Color::Red);
         } else {
             if (hoveredPos) {
-                auto distance = Distance(verlet.Position, *hoveredPos);
+                auto distance = sf::distance(verlet.Position, *hoveredPos);
                 if (distance <= shape.getRadius() + queryRadius) {
                     shape.setFillColor(sf::Color::Green);
                 } else {
@@ -65,9 +66,9 @@ void RenderSystem::Run(const Config &config) {
                             sf::Vertex(verlet2.Position)
                     };
                     config.Window.draw(line, 2, sf::Lines);
-                    minDistance = std::min(minOverlapp.value_or(1000.0f), Distance(verlet.Position, verlet2.Position));
+                    minDistance = std::min(minOverlapp.value_or(1000.0f), sf::distance(verlet.Position, verlet2.Position));
                     minOverlapp = std::min(minOverlapp.value_or(1000.0f),
-                                           Distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
+                                           sf::distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
                 }
             }
             sf::Text idText;
@@ -149,7 +150,7 @@ void RollBack(auto system, float dt) {
 void ResolveLineCollision(ECS& ecs, const CollisionResult& collisionResult) {
     auto [verlet1, circle1] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
     auto line = ecs.Get<Line>(collisionResult.id2);
-    verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
+    verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
     sf::Vector2f closestPoint;
     float distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
     auto overlapp = circle1.Radius - distance;
@@ -167,14 +168,14 @@ void ResolveCircleCollision(ECS& ecs, const CollisionResult& collisionResult) {
     RecalculateCircleCollision(verlet1, verlet2);
     auto overlapp = circle1.Radius +
                     circle2.Radius -
-                    Distance(verlet1.Position, verlet2.Position);
+                    sf::distance(verlet1.Position, verlet2.Position);
     while (not FloatEqual(overlapp, 0.0f) && FloatGreaterThan(overlapp, 0.0f)) {
         auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
         verlet1.Position += normal * (overlapp + 1.0f);
         verlet2.Position -= normal * (overlapp + 1.0f);
         overlapp = circle1.Radius +
                     circle2.Radius -
-                    Distance(verlet1.Position, verlet2.Position);
+                    sf::distance(verlet1.Position, verlet2.Position);
     }
 }
 
@@ -231,7 +232,7 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
                     auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(id2);
                     auto overlapp = circle1.Radius +
                                     circle2.Radius -
-                                    Distance(verlet1.Position, verlet2.Position);
+                                    sf::distance(verlet1.Position, verlet2.Position);
                     bool collision = overlapp > 0;
                     if (!collision) {
                         continue;
@@ -241,7 +242,7 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
                         verlet2.Position -= verlet2.Velocity * dtPart * 0.1f;
                         overlapp = circle1.Radius +
                                     circle2.Radius -
-                                    Distance(verlet1.Position, verlet2.Position);
+                                    sf::distance(verlet1.Position, verlet2.Position);
                     }
                     RecalculateCircleCollision(verlet1, verlet2);
                 }
@@ -259,7 +260,7 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
                         distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
                         overlapp = circle1.Radius - distance;
                     }
-                    verlet1.Velocity -= Reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
+                    verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
                 }
         }
     }

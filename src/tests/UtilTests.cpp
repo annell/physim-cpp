@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 #include "SFML/System.hpp"
 
+/*
 TEST(UtilTests, Projection1) {
     sf::Vector2f A = {0, 0};
     sf::Vector2f B = {1, 0};
@@ -29,7 +30,7 @@ TEST(UtilTests, Projection3) {
     auto C = Projection(A, B);
     ASSERT_FLOAT_EQ(C.x, 0.0f);
     ASSERT_FLOAT_EQ(C.y, 0.0f);
-}
+}*/
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

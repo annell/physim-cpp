@@ -4,3 +4,6 @@
 [submodule "thirdParty/octree-cpp"]
 	path = thirdParty/octree-cpp
 	url = git@github.com:annell/octree-cpp.git
+[submodule "thirdParty/SFMLMath"]
+	path = thirdParty/SFMLMath
+	url = git@github.com:annell/SFMLMath.git
