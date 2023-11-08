@@ -46,7 +46,7 @@ Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
         }
     }
 
-    return std::move(octree);
+    return octree;
 }
 
 // minimum distance (squared) between vertices, i.e. minimum segment length (squared)
