@@ -9,7 +9,6 @@
 #include <cassert>
 #include <SFMLMath.hpp>
 
-static constexpr float queryRadius = 50.0f;
 
 void RenderSystem::Run(const Config &config) {
     config.Window.clear();
@@ -121,7 +120,7 @@ std::optional<CollisionResult> CheckCollisions(const ContinousCollisionSystem::C
             }
             collision = min(circleResults.value(), collision.value());
         }
-        if (auto lineResults = LineCollision(config.Ecs, verlet, circle.Radius, tLeft)) {
+        if (auto lineResults = LineCollisionSweep(config.Ecs, verlet, circle.Radius, tLeft)) {
             lineResults->id1 = id;
             if (!collision) {
                 collision = lineResults;
@@ -151,31 +150,24 @@ void ResolveLineCollision(ECS& ecs, const CollisionResult& collisionResult) {
     auto [verlet1, circle1] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
     auto line = ecs.Get<Line>(collisionResult.id2);
     verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
-    sf::Vector2f closestPoint;
-    float distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
-    auto overlapp = circle1.Radius - distance;
-    while (not FloatEqual(overlapp, 0.0f) && FloatGreaterThan(overlapp, 0.0f)) {
-        auto NewPos = verlet1.Position - line.Normal * (overlapp + 1.0f);
+    auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
+    while (overlapp) {
+        auto NewPos = verlet1.Position - line.Normal * (*overlapp + 1.0f);
         verlet1.Position = NewPos;
-        distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
-        overlapp = circle1.Radius - distance;
+        overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
     }
 }
 
 void ResolveCircleCollision(ECS& ecs, const CollisionResult& collisionResult) {
     auto [verlet1, circle1] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
     auto [verlet2, circle2] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id2);
-    RecalculateCircleCollision(verlet1, verlet2);
-    auto overlapp = circle1.Radius +
-                    circle2.Radius -
-                    sf::distance(verlet1.Position, verlet2.Position);
-    while (not FloatEqual(overlapp, 0.0f) && FloatGreaterThan(overlapp, 0.0f)) {
-        auto normal = NormalBetweenPoints(verlet1.Position, verlet2.Position);
-        verlet1.Position += normal * (overlapp + 1.0f);
-        verlet2.Position -= normal * (overlapp + 1.0f);
-        overlapp = circle1.Radius +
-                    circle2.Radius -
-                    sf::distance(verlet1.Position, verlet2.Position);
+    UpdateCircleVelocity(verlet1, verlet2);
+    auto overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
+    while (overlapp) {
+        auto normal = sf::normalBetweenPoints(verlet1.Position, verlet2.Position);
+        verlet1.Position += normal * (*overlapp + 1.0f);
+        verlet2.Position -= normal * (*overlapp + 1.0f);
+        overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
     }
 }
 
@@ -217,7 +209,6 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
         octreeQuery = octree.Query(
                 Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
     }
-    const int nrIterations = 8;
     float dtPart = dt / nrIterations;
     for (int i = 0; i < nrIterations; i++) {
         for (const auto &[circle1, verlet1, id1, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
@@ -230,21 +221,16 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
                     }
 
                     auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(id2);
-                    auto overlapp = circle1.Radius +
-                                    circle2.Radius -
-                                    sf::distance(verlet1.Position, verlet2.Position);
-                    bool collision = overlapp > 0;
-                    if (!collision) {
+                    auto overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
+                    if (!overlapp) {
                         continue;
                     }
-                    while (overlapp > 0) {
+                    while (overlapp) {
                         verlet1.Position -= verlet1.Velocity * dtPart * 0.1f;
-                        verlet2.Position -= verlet2.Velocity * dtPart * 0.1f;
-                        overlapp = circle1.Radius +
-                                    circle2.Radius -
-                                    sf::distance(verlet1.Position, verlet2.Position);
+                        //verlet2.Position -= verlet2.Velocity * dtPart * 0.1f;
+                        overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
                     }
-                    RecalculateCircleCollision(verlet1, verlet2);
+                    UpdateCircleVelocity(verlet1, verlet2);
                 }
                 for (const auto& [line, id2]: config.Ecs.GetSystem<Line, ecs::EntityID>()) {
                     float t = 1.0f;
@@ -252,13 +238,10 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, const auto
                         continue;
                     }
                     auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(id1);
-                    sf::Vector2f closestPoint;
-                    float distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
-                    auto overlapp = circle1.Radius - distance;
-                    while (overlapp > 0) {
+                    auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
+                    while (overlapp) {
                         verlet1.Position -= verlet1.Velocity * dtPart * 0.1f;
-                        distance = SegmentSegmentDistance(line.Start, line.End, verlet1.Position, verlet1.Position, closestPoint);
-                        overlapp = circle1.Radius - distance;
+                        overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
                     }
                     verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
                 }

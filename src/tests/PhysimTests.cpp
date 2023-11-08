@@ -260,7 +260,7 @@ TEST(Physim, SphereSphereSweep5) {
 TEST(Physim, RecalculateSphereCollision1) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, -1}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -270,7 +270,7 @@ TEST(Physim, RecalculateSphereCollision1) {
 TEST(Physim, RecalculateSphereCollision2) {
     Verlet v1 = {.Position={2, 0}, .Velocity={0, 0}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, 0.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -280,7 +280,7 @@ TEST(Physim, RecalculateSphereCollision2) {
 TEST(Physim, RecalculateSphereCollision3) {
     Verlet v1 = {.Position={2, 0}, .Velocity={-0.5f, 0.5f}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0.5f, -0.5f}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.5f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.5f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, -0.5f);
@@ -290,7 +290,7 @@ TEST(Physim, RecalculateSphereCollision3) {
 TEST(Physim, RecalculateSphereCollision4) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, 0.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -300,7 +300,7 @@ TEST(Physim, RecalculateSphereCollision4) {
 TEST(Physim, RecalculateSphereCollision5) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, -1}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -1.0f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);
@@ -314,7 +314,7 @@ TEST(Physim, RecalculateSphereCollision6) {
     Verlet v2 = {.Position={1, 2}, .Velocity={0, -1}};
     ASSERT_FLOAT_EQ(Length(v1.Velocity), 1.0f);
     ASSERT_FLOAT_EQ(Length(v2.Velocity), 1.0f);
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, -0.8f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.6f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.8f);
@@ -327,7 +327,7 @@ TEST(Physim, RecalculateSphereCollision6) {
 TEST(Physim, RecalculateSphereCollision7) {
     Verlet v1 = {.Position={0, 0}, .Velocity={0, 1}, .Mass{0.5f}};
     Verlet v2 = {.Position={0, 2}, .Velocity={0, 0}, .Mass{1.0f}};
-    RecalculateCircleCollision(v1, v2);
+    UpdateCircleVelocity(v1, v2);
     ASSERT_FLOAT_EQ(v1.Velocity.x, 0.0f);
     ASSERT_FLOAT_EQ(v1.Velocity.y, -0.33333333f);
     ASSERT_FLOAT_EQ(v2.Velocity.x, 0.0f);

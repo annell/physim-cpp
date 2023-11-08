@@ -4,11 +4,12 @@
 #include "Components.h"
 #include "Util.h"
 #include "System.h"
+#include "Physics.h"
 #include "Controls.h"
 #include <SFMLMath.hpp>
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
-    auto shape = sf::CircleShape(10);
+    auto shape = sf::CircleShape(circleRadius);
     float radius = shape.getRadius();
     auto midX = worldBoundrarys.Position.x + worldBoundrarys.Size.x / 2;
     auto midY = worldBoundrarys.Position.y + worldBoundrarys.Size.y / 2;
@@ -20,7 +21,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     while (true) {
         bool collision = false;
         for (const auto &[shape2]: ecs.template GetSystem<sf::CircleShape>()) {
-            if (Collision(shape, shape2)) {
+            if (Overlapp(shape, shape2)) {
                 pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20),
                                    RandomFloat(20, worldBoundrarys.Size.y - 20)};
                 shape.setPosition(pos);
@@ -42,7 +43,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
 
 int main() {
     WorldBoundrarys worldBoundrarys{{0,   0},
-                                    {700, 700}};
+                                    {1500, 700}};
     sf::RenderWindow sfmlWin(sf::VideoMode(worldBoundrarys.Size.x, worldBoundrarys.Size.y),
                              "Verlet collision simulation");
 
@@ -93,10 +94,10 @@ int main() {
     sf::Vector2f B = {worldBoundrarys.Size.x, 0};
     sf::Vector2f C = worldBoundrarys.Size;
     sf::Vector2f D = {0, worldBoundrarys.Size.y};
-    ecs.BuildEntity(Line{A, B, NormalBetweenPoints(A, B)});
-    ecs.BuildEntity(Line{B, C, NormalBetweenPoints(B, C)});
-    ecs.BuildEntity(Line{C, D, NormalBetweenPoints(C, D)});
-    ecs.BuildEntity(Line{D, A, NormalBetweenPoints(D, A)});
+    ecs.BuildEntity(Line{A, B, sf::normalBetweenPoints(A, B)});
+    ecs.BuildEntity(Line{B, C, sf::normalBetweenPoints(B, C)});
+    ecs.BuildEntity(Line{C, D, sf::normalBetweenPoints(C, D)});
+    ecs.BuildEntity(Line{D, A, sf::normalBetweenPoints(D, A)});
 
     sf::Text fpsText;
     fpsText.setFont(font);
@@ -119,8 +120,8 @@ int main() {
         if (pause) {
             fps = "Paused";
         } else {
-            if (timer > 0.05f) {
-                if (ecs.Size() < 150) {
+            if (timer > 0.001f) {
+                if (ecs.Size() < 1023) {
                     AddCircle(ecs, worldBoundrarys);
                 }
                 timer = 0;

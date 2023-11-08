@@ -9,6 +9,10 @@
 #include <octree-cpp/OctreeCpp.h>
 #include <optional>
 
+static constexpr float circleRadius = 2.0f;
+static constexpr float queryRadius = 3 * circleRadius;
+static constexpr int nrIterations = 1;
+
 enum class CollisionType {
     Circle,
     Line
@@ -24,16 +28,6 @@ struct CollisionResult {
 
 
 CollisionResult min(CollisionResult a, CollisionResult b);
-
-std::optional<float> CircleCircleSweep
-        (
-                const float ra, //radius of sphere A
-                const sf::Vector2f &A0, //previous position of sphere A
-                const sf::Vector2f &A1, //current position of sphere A
-                const float rb, //radius of sphere B
-                const sf::Vector2f &B0, //previous position of sphere B
-                const sf::Vector2f &B1 //current position of sphere B
-        );
 
 std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB);
 
@@ -65,6 +59,6 @@ CircleCollision(ECS &ecs, const auto &query, const Verlet &verlet, float radius,
 
 bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0);
 
-std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt);
+std::optional<CollisionResult> LineCollisionSweep(ECS &ecs, const Verlet &verlet, float radius, float dt);
 
-const void RecalculateCircleCollision(Verlet &A, Verlet &B);
+const void UpdateCircleVelocity(Verlet &A, Verlet &B);

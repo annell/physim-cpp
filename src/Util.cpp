@@ -15,32 +15,25 @@ sf::Color RandomColor() {
     return sf::Color(RandomFloat(0, 255), RandomFloat(0, 255), RandomFloat(0, 255));
 }
 
-bool Collision(const sf::CircleShape &circle1, const sf::CircleShape &circle2) {
-    float distance = sf::distance(circle1.getPosition(), circle2.getPosition());
-    return distance < circle1.getRadius() + circle2.getRadius();
+std::optional<float> Overlapp(const sf::Vector2f &pos1, const sf::Vector2f &pos2, float radius1, float radius2) {
+    float distance = sf::distance(pos1, pos2);
+    if (distance < radius1 + radius2) {
+        return distance / (radius1 + radius2);
+    }
+    return std::nullopt;
 }
 
-sf::Vector2f NormalBetweenPoints(const sf::Vector2f &point1, const sf::Vector2f &point2) {
-    sf::Vector2f direction = point2 - point1;
-    sf::Vector2f normal = {direction.y, -direction.x};
-    normal /= std::sqrt(normal.x * normal.x + normal.y * normal.y);
-    return normal;
+std::optional<float> Overlapp(const Line &line, const sf::Vector2f &position, float radius) {
+    sf::Vector2f _;
+    auto overlapp = radius - SegmentSegmentDistance(line.Start, line.End, position, position, _);
+    if (overlapp > 0) {
+        return overlapp;
+    }
+    return std::nullopt;
 }
 
-bool FloatEqual(float a, float b) {
-    return fabs(a - b) < std::numeric_limits<float>::epsilon();
-}
-
-bool FloatIsZero(float a) {
-    return FloatEqual(a, 0.0f);
-}
-
-bool FloatLessThan(float a, float b) {
-    return a < b and not FloatEqual(a, b);
-}
-
-bool FloatGreaterThan(float a, float b) {
-    return not FloatLessThan(a, b);
+std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleShape &circle2) {
+    return Overlapp(circle1.getPosition(), circle2.getPosition(), circle1.getRadius(), circle2.getRadius());
 }
 
 Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
@@ -237,24 +230,4 @@ double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L
     return std::sqrt(
             SegmentSegmentDistanceSquared(L1Start.x, L1Start.y, L1End.x, L1End.y, L2Start.x, L2Start.y, L2End.x,
                                           L2End.y, Out.x, Out.y));
-}
-
-constexpr float radToDeg(float rad) { return rad * (180 / M_PI); }
-
-float vectorAngle(float x, float y) {
-    if (FloatIsZero(x)) // special cases
-        return (y > 0) ? 90
-                       : (y == 0) ? 0
-                                  : 270;
-    else if (FloatIsZero(y)) // special cases
-        return (x >= 0) ? 0
-                        : 180;
-    int ret = radToDeg(atanf((float) y / x));
-    if (x < 0 && y < 0) // quadrant Ⅲ
-        ret = 180 + ret;
-    else if (x < 0) // quadrant Ⅱ
-        ret = 180 + ret; // it actually substracts
-    else if (y < 0) // quadrant Ⅳ
-        ret = 270 + (90 + ret); // it actually substracts
-    return ret;
 }

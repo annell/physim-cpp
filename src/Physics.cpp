@@ -1,6 +1,14 @@
 #include "Physics.h"
 #include <SFMLMath.hpp>
 
+bool FloatEqual(float a, float b) {
+    return fabs(a - b) < std::numeric_limits<float>::epsilon();
+}
+
+bool FloatLessThan(float a, float b) {
+    return a < b and not FloatEqual(a, b);
+}
+
 CollisionResult min(CollisionResult a, CollisionResult b) {
     if (FloatEqual(a.tCollision, b.tCollision) || FloatLessThan(a.tCollision, b.tCollision)) {
         return a;
@@ -8,25 +16,14 @@ CollisionResult min(CollisionResult a, CollisionResult b) {
     return b;
 }
 
-std::optional<float> CircleCircleSweep
-        (
-                const float ra, //radius of sphere A
-                const sf::Vector2f &A0, //Current pos sphere A
-                const sf::Vector2f &A1, //Next pos sphere A
-                const float rb, //radius of sphere B
-                const sf::Vector2f &B0, //Current pos sphere B
-                const sf::Vector2f &B1 //Next pos sphere B
-        ) {
+std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB) {
     sf::Vector2f closestPoint;
-    auto dist = std::abs(SegmentSegmentDistance(A0, A1, B0, B1, closestPoint));
-    if (dist <= ra + rb) {
-        return dist / (ra + rb);
+    auto dist = std::abs(SegmentSegmentDistance(A.PreviousPosition, A.Position, B.PreviousPosition, B.Position, closestPoint));
+    auto t = dist / (radiusA + radiusB);
+    if (t <= 1.0f) {
+        return t;
     }
     return std::nullopt;
-}
-
-std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB) {
-    return CircleCircleSweep(radiusA, A.PreviousPosition, A.Position, radiusB, B.PreviousPosition, B.Position);
 }
 
 bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0) {
@@ -42,7 +39,7 @@ bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &l
     }
 }
 
-std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt) {
+std::optional<CollisionResult> LineCollisionSweep(ECS &ecs, const Verlet &verlet, float radius, float dt) {
     std::optional<CollisionResult> collisionResult;
     for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
         float t = 1.0f;
@@ -57,7 +54,7 @@ std::optional<CollisionResult> LineCollision(ECS &ecs, const Verlet &verlet, flo
     return collisionResult;
 }
 
-const void RecalculateCircleCollision(Verlet &A, Verlet &B) {
+const void UpdateCircleVelocity(Verlet &A, Verlet &B) {
     auto normal = sf::getNormalized(A.Position - B.Position);
 
     auto a1 = sf::projection(A.Velocity, normal);
