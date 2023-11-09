@@ -111,22 +111,21 @@ int main() {
     float timer = 0;
     auto fps = std::to_string(1);
     while (sfmlWin.isOpen()) {
+        float dt = clock.restart().asSeconds();
         controls.HandleEvents(sfmlWin);
         if (step) {
             pause = false;
+            dt = 1/60.0f;
         }
-        float dt = clock.restart().asSeconds();
         timer += dt;
         if (pause) {
             fps = "Paused";
         } else {
-            if (timer > 0.001f) {
-                if (ecs.Size() < 1023) {
-                    AddCircle(ecs, worldBoundrarys);
-                }
-                timer = 0;
-                fps = std::to_string(1 / dt);
+            while (ecs.Size() < nrCircles) {
+                AddCircle(ecs, worldBoundrarys);
             }
+            timer = 0;
+            fps = std::to_string(1 / dt);
             GravitySystem::Run(GravitySystem::Config{
                     .Ecs=ecs,
                     .dt=dt

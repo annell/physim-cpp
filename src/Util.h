@@ -4,18 +4,28 @@
 
 #pragma once
 
-#include "System.h"
+#include <SFML/Graphics.hpp>
 #include <octree-cpp/OctreeCpp.h>
+#include <ecs-cpp/EcsCpp.h>
+#include <optional>
+#include "Components.h"
+
+struct vec {
+    float x, y, z = 0;
+
+    auto operator<=>(const vec &rhs) const = default;
+};
+
+using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
+using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID, octreeQuery>;
+static constexpr float circleRadius = 6.0f;
+static constexpr float queryRadius = 2.0f * circleRadius;
+static constexpr int nrIterations = 1;
+static constexpr int nrCircles = 4000;
 
 float RandomFloat(float min, float max);
 
 sf::Color RandomColor();
-
-std::optional<float> Overlapp(const sf::Vector2f &pos1, const sf::Vector2f &pos2, float radius1, float radius2);
-
-std::optional<float> Overlapp(const Line &l1, const sf::Vector2f &pos, float radius1);
-
-std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleShape &circle2);
 
 struct WorldBoundrarys {
     sf::Vector2f Position;

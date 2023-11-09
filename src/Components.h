@@ -23,7 +23,7 @@ struct Verlet {
     sf::Vector2f Velocity;
     sf::Vector2f PreviousPosition;
     float Mass = 1.0;
-    float Bounciness = 1.0;
+    float Bounciness = 0.9f;
     float Friction = 0.5;
 
     void Update(float dt) {

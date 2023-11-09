@@ -1,7 +1,6 @@
 #include "Util.h"
 
 #include <SFMLMath.hpp>
-#include "SFML/Graphics.hpp"
 #include <random>
 
 float RandomFloat(float min, float max) {
@@ -13,27 +12,6 @@ float RandomFloat(float min, float max) {
 
 sf::Color RandomColor() {
     return sf::Color(RandomFloat(0, 255), RandomFloat(0, 255), RandomFloat(0, 255));
-}
-
-std::optional<float> Overlapp(const sf::Vector2f &pos1, const sf::Vector2f &pos2, float radius1, float radius2) {
-    float distance = sf::distance(pos1, pos2);
-    if (distance < radius1 + radius2) {
-        return distance / (radius1 + radius2);
-    }
-    return std::nullopt;
-}
-
-std::optional<float> Overlapp(const Line &line, const sf::Vector2f &position, float radius) {
-    sf::Vector2f _;
-    auto overlapp = radius - SegmentSegmentDistance(line.Start, line.End, position, position, _);
-    if (overlapp > 0) {
-        return overlapp;
-    }
-    return std::nullopt;
-}
-
-std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleShape &circle2) {
-    return Overlapp(circle1.getPosition(), circle2.getPosition(), circle1.getRadius(), circle2.getRadius());
 }
 
 Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
