@@ -198,7 +198,7 @@ void ContinousCollisionSystem::Run(const Config &config) {
 }
 
 void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) {
-    static int i = 2;
+    static int i = 5;
     i++;
     if (i >= 5) {
         auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
@@ -213,6 +213,9 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) 
         for (const auto [circle1, verlet1, id1, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
                 verlet1.PreviousPosition = verlet1.Position;
                 verlet1.Update(dtPart);
+                sf::Vector2f avgDirection;
+                sf::Vector2f avgVelocity;
+                bool collision = false;
                 for (const auto &testPoint: query) {
                     const auto &id2 = testPoint.Data;
                     if (id1 == id2) {
@@ -224,13 +227,19 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) 
                     if (!overlapp) {
                         continue;
                     }
-                    UpdateCircleVelocity(verlet1, verlet2);
+                    collision = true;
+                    auto newVelocity = UpdateCircleVelocity(verlet1, verlet2);
+                    avgVelocity += newVelocity;
+                    verlet2.Velocity += sf::getNormalized(newVelocity) * sf::getLength(verlet2.Velocity) * -1.0f;
                     if (overlapp) {
                         auto direction = verlet1.Position - verlet2.Position;
-                        direction = normalize(direction);
-                        verlet1.Position += direction * *overlapp * 0.5f;
-                        verlet2.Position -= direction * *overlapp * 0.5f;
+                        avgDirection += normalize(direction) * *overlapp * 0.5f;
                     }
+                }
+                if (collision) {
+                    verlet1.Position += avgDirection;
+                    auto length = sf::getLength(verlet1.Velocity);
+                    verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
                 }
                 for (const auto& [line, id2]: config.Ecs.GetSystem<Line, ecs::EntityID>()) {
                     float t = 1.0f;

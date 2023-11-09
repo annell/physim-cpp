@@ -43,7 +43,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
 
 int main() {
     WorldBoundrarys worldBoundrarys{{0,   0},
-                                    {1500, 700}};
+                                    {1200, 700}};
     sf::RenderWindow sfmlWin(sf::VideoMode(worldBoundrarys.Size.x, worldBoundrarys.Size.y),
                              "Verlet collision simulation");
 

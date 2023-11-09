@@ -105,7 +105,7 @@ std::optional<CollisionResult> FirstLineCollision(ECS &ecs, const Verlet &verlet
     return collisionResult;
 }
 
-void UpdateCircleVelocity(Verlet &A, Verlet &B) {
+sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B) {
     auto normal = sf::getNormalized(A.Position - B.Position);
 
     auto a1 = sf::projection(A.Velocity, normal);
@@ -113,6 +113,5 @@ void UpdateCircleVelocity(Verlet &A, Verlet &B) {
 
     auto optimizedP = (2.0f * (a1 - a2)) / (A.Mass + B.Mass);
 
-    A.Velocity -= optimizedP * B.Mass * A.Bounciness;
-    B.Velocity += optimizedP * A.Mass * B.Bounciness;
+    return optimizedP * B.Mass * A.Bounciness * -1.0f;
 }

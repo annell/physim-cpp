@@ -34,4 +34,4 @@ std::optional<CollisionResult> FirstLineCollision(ECS &ecs, const Verlet &verlet
 std::optional<CollisionResult>
 FirstCircleCollision(ECS &ecs, const octreeQuery &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft);
 
-void UpdateCircleVelocity(Verlet &A, Verlet &B);
+sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B);
