@@ -5,6 +5,7 @@
 #pragma once
 
 #include "SFML/Graphics.hpp"
+#include <SFMLMath.hpp>
 
 struct Circle {
     float Radius = 10.0;
@@ -26,7 +27,14 @@ struct Verlet {
     float Bounciness = 0.9f;
     float Friction = 0.5;
 
+    void MaxVelocity(float max) {
+        if (sf::getLength(Velocity) > max) {
+            Velocity = sf::getNormalized(Velocity) * max;
+        }
+    }
+
     void Update(float dt) {
+        MaxVelocity(100.0f);
         Position += Velocity * dt;
     }
 
