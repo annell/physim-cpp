@@ -10,6 +10,8 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+file(COPY resources/myfont.ttf DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/src)
+
 add_subdirectory("thirdparty")
 add_subdirectory("src")
 

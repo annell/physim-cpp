@@ -87,7 +87,7 @@ int main() {
     });
     sf::Font font;
     auto path = std::filesystem::current_path();
-    if (!font.loadFromFile(path.generic_string() + "/../../resources/myfont.ttf")) {
+    if (!font.loadFromFile(path.generic_string() + "/myfont.ttf")) {
         return -1;
     }
     sf::Vector2f A = {0, 0};
