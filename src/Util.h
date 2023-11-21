@@ -16,7 +16,7 @@ struct vec {
     auto operator<=>(const vec &rhs) const = default;
 };
 
-using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
+using octreeQuery = std::list<DataWrapper<vec, ecs::EntityID>>;
 using ECS = ecs::ECSManager<sf::CircleShape, Circle, Line, Verlet, ecs::EntityID, octreeQuery>;
 static constexpr float circleRadius = 3.0f;
 static constexpr float queryRadius = 3.0f * circleRadius;
