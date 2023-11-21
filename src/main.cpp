@@ -54,7 +54,7 @@ int main() {
 
     ECS ecs;
     Controls controls;
-    controls.RegisterEvent(sf::Event::Closed, [&sfmlWin](auto e) { sfmlWin.close(); });
+    controls.RegisterEvent(sf::Event::Closed, [&sfmlWin](auto) { sfmlWin.close(); });
     controls.RegisterEvent(sf::Event::KeyPressed, [&](auto e) {
         if (e.key.code == sf::Keyboard::Space) {
             pause = !pause;
@@ -108,7 +108,6 @@ int main() {
     nrPoints.setPosition(10, 50);
 
     sf::Clock clock;
-    float timer = 0;
     auto fps = std::to_string(1);
     while (sfmlWin.isOpen()) {
         float dt = clock.restart().asSeconds();
@@ -117,14 +116,12 @@ int main() {
             pause = false;
             dt = 1/60.0f;
         }
-        timer += dt;
         if (pause) {
             fps = "Paused";
         } else {
             while (ecs.Size() < nrCircles) {
                 AddCircle(ecs, worldBoundrarys);
             }
-            timer = 0;
             fps = std::to_string(1 / dt);
             GravitySystem::Run(GravitySystem::Config{
                     .Ecs=ecs,
