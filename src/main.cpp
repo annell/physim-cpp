@@ -94,10 +94,11 @@ int main() {
     sf::Vector2f B = {worldBoundrarys.Size.x, 0};
     sf::Vector2f C = worldBoundrarys.Size;
     sf::Vector2f D = {0, worldBoundrarys.Size.y};
-    ecs.BuildEntity(Line{A, B, sf::normalBetweenPoints(A, B)});
-    ecs.BuildEntity(Line{B, C, sf::normalBetweenPoints(B, C)});
-    ecs.BuildEntity(Line{C, D, sf::normalBetweenPoints(C, D)});
-    ecs.BuildEntity(Line{D, A, sf::normalBetweenPoints(D, A)});
+    Lines lines;
+    lines.push_back(Line{A, B, sf::normalBetweenPoints(A, B)});
+    lines.push_back(Line{B, C, sf::normalBetweenPoints(B, C)});
+    lines.push_back(Line{C, D, sf::normalBetweenPoints(C, D)});
+    lines.push_back(Line{D, A, sf::normalBetweenPoints(D, A)});
 
     sf::Text fpsText;
     fpsText.setFont(font);
@@ -119,7 +120,7 @@ int main() {
         if (pause) {
             fps = "Paused";
         } else {
-            while (ecs.Size() < nrCircles) {
+            if (ecs.Size() < nrCircles) {
                 AddCircle(ecs, worldBoundrarys);
             }
             fps = std::to_string(1 / dt);
@@ -137,7 +138,8 @@ int main() {
             DiscreteCollisionSystem::Run(DiscreteCollisionSystem::Config{
                     .Ecs=ecs,
                     .worldBoundrarys=worldBoundrarys,
-                    .dt=dt
+                    .dt=dt,
+                    .Lines=lines
             });
         }
         RenderSystem::Run(RenderSystem::Config{

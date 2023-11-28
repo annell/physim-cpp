@@ -43,6 +43,7 @@ namespace DiscreteCollisionSystem {
         ECS &Ecs;
         WorldBoundrarys &worldBoundrarys;
         float dt = 0.0f;
+        Lines &Lines;
     };
 
     void Run(const Config &);

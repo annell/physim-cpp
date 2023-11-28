@@ -11,16 +11,6 @@ bool FloatLessThan(float a, float b) {
     return a < b and not FloatEqual(a, b);
 }
 
-std::optional<float> VerletCircleSweep(const Verlet &A, float radiusA, const Verlet &B, float radiusB) {
-    sf::Vector2f closestPoint;
-    auto dist = std::abs(SegmentSegmentDistance(A.PreviousPosition, A.Position, B.PreviousPosition, B.Position, closestPoint));
-    auto t = dist / (radiusA + radiusB);
-    if (t <= 1.0f) {
-        return t;
-    }
-    return std::nullopt;
-}
-
 }
 
 const CollisionResult& Min(const CollisionResult& a, const CollisionResult& b) {
@@ -51,32 +41,6 @@ std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleSh
     return Overlapp(circle1.getPosition(), circle2.getPosition(), circle1.getRadius(), circle2.getRadius());
 }
 
-std::optional<CollisionResult>
-FirstCircleCollision(ECS &ecs, const octreeQuery &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft) {
-    std::optional<CollisionResult> collisionResult;
-    for (const auto &testPoint: query) {
-        const auto &id2 = testPoint.Data;
-        if (id1 == id2) {
-            continue;
-        }
-
-        auto [verlet2, circle2] = ecs.GetSeveral<Verlet, Circle>(id2);
-        auto sweepResults = VerletCircleSweep(verlet, radius, verlet2,
-                                              circle2.Radius);
-        if (!sweepResults) {
-            continue;
-        }
-
-        auto t = *sweepResults * tLeft;
-        if (!collisionResult) {
-            collisionResult = CollisionResult{t, id1, id2, CollisionType::Circle};
-        } else if (t < collisionResult->tCollision) {
-            collisionResult = CollisionResult{t, id1, id2, CollisionType::Circle};
-        }
-    }
-    return collisionResult;
-}
-
 bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0) {
     sf::Vector2f closestPoint;
     auto dist = std::abs(SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint));
@@ -88,21 +52,6 @@ bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &l
         u0 = sf::distance(verlet.PreviousPosition, closestPoint) / sf::distance(verlet.PreviousPosition, verlet.Position);
         return true;
     }
-}
-
-std::optional<CollisionResult> FirstLineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt) {
-    std::optional<CollisionResult> collisionResult;
-    for (const auto &[line, id2]: ecs.GetSystem<Line, ecs::EntityID>()) {
-        float t = 1.0f;
-        if (!IntersectMovingCircleLine(radius, verlet, line, t)) {
-            continue;
-        }
-        t *= dt;
-        if (!collisionResult || t <= collisionResult->tCollision) {
-            collisionResult = CollisionResult{.tCollision=t, .id2=id2, .Type=CollisionType::Line};
-        }
-    }
-    return collisionResult;
 }
 
 sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B) {

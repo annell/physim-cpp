@@ -101,102 +101,6 @@ void GravitySystem::Run(const Config &config) {
     }
 }
 
-std::optional<CollisionResult> CheckCollisions(const ContinousCollisionSystem::Config &config, const auto& octree, float tLeft) {
-    std::optional<CollisionResult> collision;
-    for (const auto &[circle, verlet, id]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID>()) {
-        auto query = octree.Query(
-                Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
-        if (auto circleResults = FirstCircleCollision(config.Ecs, query, verlet, circle.Radius, id, tLeft)) {
-            if (!collision) {
-                collision = circleResults;
-                continue;
-            }
-            collision = Min(circleResults.value(), collision.value());
-        }
-        if (auto lineResults = FirstLineCollision(config.Ecs, verlet, circle.Radius, tLeft)) {
-            lineResults->id1 = id;
-            if (!collision) {
-                collision = lineResults;
-                continue;
-            }
-            collision = Min(lineResults.value(), collision.value());
-        }
-    }
-    return collision;
-}
-
-void StepForward(auto system, float tLeft) {
-    for (const auto &[verlet]: system) {
-        verlet.PreviousPosition = verlet.Position;
-        verlet.Update(tLeft);
-    }
-}
-
-void RollBack(auto system, float dt) {
-    for (const auto &[verlet]: system) {
-        verlet.Revert();
-        verlet.Update(dt);
-    }
-}
-
-void ResolveLineCollision(ECS& ecs, const CollisionResult& collisionResult) {
-    auto [verlet1, circle1] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
-    auto line = ecs.Get<Line>(collisionResult.id2);
-    verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
-    auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
-    while (overlapp) {
-        auto NewPos = verlet1.Position - line.Normal * (*overlapp + 1.0f);
-        verlet1.Position = NewPos;
-        overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
-    }
-}
-
-void ResolveCircleCollision(ECS& ecs, const CollisionResult& collisionResult) {
-    auto [verlet1, circle1] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id1);
-    auto [verlet2, circle2] = ecs.GetSeveral<Verlet, Circle>(collisionResult.id2);
-    UpdateCircleVelocity(verlet1, verlet2);
-    auto overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
-    while (overlapp) {
-        auto normal = sf::normalBetweenPoints(verlet1.Position, verlet2.Position);
-        verlet1.Position += normal * (*overlapp + 1.0f);
-        verlet2.Position -= normal * (*overlapp + 1.0f);
-        overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
-    }
-}
-
-void ContinousCollisionSystem::Run(const Config &config) {
-    auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-
-    float t0 = 0.0f;
-    if (config.dt > 1) {
-        std::cout << "dt is to big" << std::endl;
-        return;
-    }
-
-    while (t0 < config.dt) {
-        auto tLeft = config.dt - t0;
-        StepForward(config.Ecs.GetSystem<Verlet>(), tLeft);
-        auto collisionResult = CheckCollisions(config, octree, tLeft);
-
-        if (!collisionResult) {
-            break;
-        }
-
-        //if (collisionResult->tCollision < tLeft) {
-            collisionResult->tCollision *= 0.95;
-            RollBack(config.Ecs.GetSystem<Verlet>(), collisionResult->tCollision);
-        //}
-
-        if (collisionResult->Type == CollisionType::Line) {
-            ResolveLineCollision(config.Ecs, *collisionResult);
-        } else {
-            ResolveCircleCollision(config.Ecs, *collisionResult);
-        }
-
-        t0 += collisionResult->tCollision;
-    }
-}
-
 void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) {
     static int i = 5;
     i++;
@@ -241,7 +145,7 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) 
                     auto length = sf::getLength(verlet1.Velocity);
                     verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
                 }
-                for (const auto& [line, id2]: config.Ecs.GetSystem<Line, ecs::EntityID>()) {
+                for (const auto& line: config.Lines) {
                     float t = 1.0f;
                     if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line, t)) {
                         continue;
