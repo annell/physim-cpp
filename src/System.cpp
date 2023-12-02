@@ -120,7 +120,7 @@ void GravitySystem::Run(const Config &config) {
     }
 }
 
-void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) {
+void UpdateQuery(const DiscreteCollisionSystem::Config &config) {
     static bool first = true;
     if (first) {
         auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
@@ -133,7 +133,7 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) 
     else {
         static int i = 0;
         if (i > 3) {
-            auto a1 = std::async(std::launch::async, [&]() {
+            auto a = std::async(std::launch::async, [&]() {
                 auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
                 for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, octreeQuery>()) {
                     octreeQuery = octree.Query(
@@ -144,55 +144,55 @@ void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) 
         }
         i++;
     }
-    float dtPart = dt / nrIterations;
-    for (int i = 0; i < nrIterations; i++) {
-        for (const auto [circle1, verlet1, id1, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
-                verlet1.PreviousPosition = verlet1.Position;
-                verlet1.Update(dtPart);
-                sf::Vector2f avgDirection;
-                sf::Vector2f avgVelocity;
-                bool collision = false;
-                for (const auto &testPoint: query) {
-                    const auto &id2 = testPoint.Data;
-                    if (id1 == id2) {
-                        continue;
-                    }
-
-                    auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(id2);
-                    auto overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
-                    if (!overlapp) {
-                        continue;
-                    }
-                    collision = true;
-                    auto newVelocity = UpdateCircleVelocity(verlet1, verlet2);
-                    avgVelocity += newVelocity;
-                    verlet2.Velocity += sf::getNormalized(newVelocity) * sf::getLength(verlet2.Velocity) * -1.0f;
-                    if (overlapp) {
-                        auto direction = verlet1.Position - verlet2.Position;
-                        avgDirection += normalize(direction) * *overlapp * 0.5f;
-                    }
-                }
-                if (collision) {
-                    verlet1.Position += avgDirection;
-                    auto length = sf::getLength(verlet1.Velocity);
-                    verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
-                }
-                for (const auto& line: config.Lines) {
-                    float t = 1.0f;
-                    if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line, t)) {
-                        continue;
-                    }
-                    auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(id1);
-                    auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
-                    if (overlapp) {
-                        verlet1.Position -= line.Normal * *overlapp * 1.0f;
-                    }
-                    verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
-                }
-        }
-    }
 }
 
 void DiscreteCollisionSystem::Run(const Config &config) {
-    ResolveCollisions(config, config.dt);
+    UpdateQuery(config);
+    float dtPart = config.dt / nrIterations;
+    for (int i = 0; i < nrIterations; i++) {
+        for (const auto [circle1, verlet1, id1, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
+            verlet1.PreviousPosition = verlet1.Position;
+            verlet1.Update(dtPart);
+            sf::Vector2f avgDirection;
+            sf::Vector2f avgVelocity;
+            bool collision = false;
+            for (const auto &testPoint: query) {
+                const auto &id2 = testPoint.Data;
+                if (id1 == id2) {
+                    continue;
+                }
+
+                auto [verlet2, circle2] = config.Ecs.GetSeveral<Verlet, Circle>(id2);
+                auto overlapp = Overlapp(verlet1.Position, verlet2.Position, circle1.Radius, circle2.Radius);
+                if (!overlapp) {
+                    continue;
+                }
+                collision = true;
+                auto newVelocity = UpdateCircleVelocity(verlet1, verlet2);
+                avgVelocity += newVelocity;
+                verlet2.Velocity += sf::getNormalized(newVelocity) * sf::getLength(verlet2.Velocity) * -1.0f;
+                if (overlapp) {
+                    auto direction = verlet1.Position - verlet2.Position;
+                    avgDirection += normalize(direction) * *overlapp * 0.5f;
+                }
+            }
+            if (collision) {
+                verlet1.Position += avgDirection;
+                auto length = sf::getLength(verlet1.Velocity);
+                verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
+            }
+            for (const auto& line: config.Lines) {
+                float t = 1.0f;
+                if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line, t)) {
+                    continue;
+                }
+                auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(id1);
+                auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
+                if (overlapp) {
+                    verlet1.Position -= line.Normal * *overlapp * 1.0f;
+                }
+                verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;
+            }
+        }
+    }
 }
