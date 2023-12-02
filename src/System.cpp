@@ -11,33 +11,53 @@
 #include <future>
 
 
+void addCircle(sf::VertexArray &array, sf::Vector2f position, float radius, sf::Color color) {
+    for (int i = 0; i < vertexPerCircle; i += 1) {
+        sf::Vertex v0;
+        v0.position = sf::Vector2f(position.x, position.y);
+        v0.color = color;
+        array.append(v0);
+
+        sf::Vertex v1;
+        float angle = i * 2 * M_PI / vertexPerCircle;
+        v1.position = sf::Vector2f(position.x + cos(angle) * radius, position.y + sin(angle) * radius);
+        v1.color = color;
+        array.append(v1);
+
+        sf::Vertex v2;
+        angle = (i + 1) * 2 * M_PI / vertexPerCircle;
+        v2.position = sf::Vector2f(position.x + cos(angle) * radius, position.y + sin(angle) * radius);
+        v2.color = color;
+        array.append(v2);
+    }
+}
+
 void RenderSystem::Run(const Config &config) {
     config.Window.clear();
     std::vector<ecs::EntityID> entitiesToRemove;
     std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position
                                                               : std::optional<sf::Vector2f>();
-    std::vector<sf::Vertex> points;
-    points.reserve(config.Ecs.Size());
+    sf::VertexArray points(sf::Triangles);
+    points.resize(config.Ecs.Size() * vertexPerCircle);
 
     for (const auto &[circle, verlet, id, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
-        sf::Vertex point;
-        point.position = verlet.Position;
         auto radius = circle.Radius;
+        sf::Color color;
         if (id == config.hoveredId) {
-            point.color = sf::Color::Red;
+            color = sf::Color::Red;
         } else {
             if (hoveredPos) {
                 auto distance = sf::distance(verlet.Position, *hoveredPos);
                 if (distance <= radius + queryRadius) {
-                    point.color = sf::Color::Green;
+                    color = sf::Color::Green;
                 } else {
-                    point.color = circle.Color;
+                    color = circle.Color;
                 }
             } else {
-                point.color = circle.Color;
+                color = circle.Color;
             }
         }
-        points.push_back(point);
+        addCircle(points, verlet.Position, radius, color);
         if (id == config.hoveredId) {
             sf::CircleShape outline;
             outline.setRadius(radius + queryRadius);
@@ -84,7 +104,7 @@ void RenderSystem::Run(const Config &config) {
             entitiesToRemove.push_back(id);
         }
     }
-    config.Window.draw(points.data(), points.size(), sf::Points);
+    config.Window.draw(points);
 
     for (const auto& line : config.lines) {
         sf::Vertex lineShape[] = {
