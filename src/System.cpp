@@ -10,6 +10,9 @@
 #include <SFMLMath.hpp>
 #include <future>
 
+constexpr float PI_VertexPerCircle() {
+    return M_PI / vertexPerCircle;
+}
 
 void addCircle(sf::VertexArray &array, sf::Vector2f position, float radius, sf::Color color) {
     for (int i = 0; i < vertexPerCircle; i += 1) {
@@ -19,13 +22,13 @@ void addCircle(sf::VertexArray &array, sf::Vector2f position, float radius, sf::
         array.append(v0);
 
         sf::Vertex v1;
-        float angle = i * 2 * M_PI / vertexPerCircle;
+        float angle = i * 2 * PI_VertexPerCircle();
         v1.position = sf::Vector2f(position.x + cos(angle) * radius, position.y + sin(angle) * radius);
         v1.color = color;
         array.append(v1);
 
         sf::Vertex v2;
-        angle = (i + 1) * 2 * M_PI / vertexPerCircle;
+        angle = (i + 1) * 2 * PI_VertexPerCircle();
         v2.position = sf::Vector2f(position.x + cos(angle) * radius, position.y + sin(angle) * radius);
         v2.color = color;
         array.append(v2);
@@ -104,7 +107,6 @@ void RenderSystem::Run(const Config &config) {
             entitiesToRemove.push_back(id);
         }
     }
-    config.Window.draw(points);
 
     for (const auto& line : config.lines) {
         sf::Vertex lineShape[] = {
@@ -116,6 +118,7 @@ void RenderSystem::Run(const Config &config) {
 
     config.fpsText.setString(config.FpsText);
     config.nrPoints.setString(std::to_string(config.Ecs.Size()));
+    config.Window.draw(points);
     config.Window.draw(config.fpsText);
     config.Window.draw(config.nrPoints);
     config.Window.display();

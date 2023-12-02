@@ -38,9 +38,5 @@ struct Verlet {
         MaxVelocity(100.0f);
         Position += Velocity * dt;
     }
-
-    void Revert() {
-        Position = PreviousPosition;
-    }
 };
 

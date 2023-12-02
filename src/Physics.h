@@ -28,12 +28,5 @@ std::optional<float> Overlapp(const Line &l1, const sf::Vector2f &pos, float rad
 std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleShape &circle2);
 
 bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0);
-/*
-std::optional<CollisionResult> FirstLineCollision(ECS &ecs, const Verlet &verlet, float radius, float dt);
-
-std::optional<CollisionResult>
-FirstCircleCollision(ECS &ecs, const octreeQuery &query, const Verlet &verlet, float radius, ecs::EntityID id1, float tLeft);
-
- */
 
 sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B);
