@@ -14,7 +14,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     auto midX = worldBoundrarys.Position.x + worldBoundrarys.Size.x / 2;
     auto midY = worldBoundrarys.Position.y + worldBoundrarys.Size.y / 2;
     shape.setPosition(midX, midY);
-    shape.setFillColor(sf::Color::Cyan);
+    shape.setFillColor(RandomColor());
     auto pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20), RandomFloat(20, worldBoundrarys.Size.y - 20)};
     shape.setPosition(pos);
     shape.setOrigin(shape.getRadius(), shape.getRadius());
@@ -35,7 +35,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     }
     ecs.BuildEntity(
             std::move(shape),
-            Circle{.Radius=radius},
+            Circle{.Radius=radius, .Color=shape.getFillColor()},
             Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos},
             octreeQuery{}
     );
@@ -63,9 +63,12 @@ int main() {
         }
     });
 
+    Line newLine;
+    Lines lines;
+
     controls.RegisterEvent(sf::Event::MouseButtonPressed, [&](auto e) {
         if (e.mouseButton.button == sf::Mouse::Left) {
-            AddCircle(ecs, worldBoundrarys);
+            newLine.Start = sf::Vector2f{static_cast<float>(e.mouseButton.x), static_cast<float>(e.mouseButton.y)};
         }
         if (e.mouseButton.button == sf::Mouse::Right) {
             if (hoveredId) {
@@ -73,6 +76,14 @@ int main() {
             } else {
                 selected = std::nullopt;
             }
+        }
+    });
+
+    controls.RegisterEvent(sf::Event::MouseButtonReleased, [&](auto e) {
+        if (e.mouseButton.button == sf::Mouse::Left) {
+            newLine.End = sf::Vector2f{static_cast<float>(e.mouseButton.x), static_cast<float>(e.mouseButton.y)};
+            newLine.Normal = sf::normalBetweenPoints(newLine.Start, newLine.End);
+            lines.push_back(newLine);
         }
     });
     controls.RegisterEvent(sf::Event::MouseMoved, [&](auto e) {
@@ -94,7 +105,6 @@ int main() {
     sf::Vector2f B = {worldBoundrarys.Size.x, 0};
     sf::Vector2f C = worldBoundrarys.Size;
     sf::Vector2f D = {0, worldBoundrarys.Size.y};
-    Lines lines;
     lines.push_back(Line{A, B, sf::normalBetweenPoints(A, B)});
     lines.push_back(Line{B, C, sf::normalBetweenPoints(B, C)});
     lines.push_back(Line{C, D, sf::normalBetweenPoints(C, D)});
@@ -110,6 +120,7 @@ int main() {
 
     sf::Clock clock;
     auto fps = std::to_string(1);
+    bool doneAddingCircles = false;
     while (sfmlWin.isOpen()) {
         float dt = clock.restart().asSeconds();
         controls.HandleEvents(sfmlWin);
@@ -117,30 +128,33 @@ int main() {
             pause = false;
             dt = 1/60.0f;
         }
+        if (!doneAddingCircles){
+            for (int i = 0; i < 50 && ecs.Size() < nrCircles; i++) {
+                AddCircle(ecs, worldBoundrarys);
+                pause = true;
+            }
+            if (ecs.Size() == nrCircles) {
+                doneAddingCircles = true;
+            }
+        }
         if (pause) {
             fps = "Paused";
         } else {
-            if (ecs.Size() < nrCircles) {
-                AddCircle(ecs, worldBoundrarys);
+            if (pause) {
+                fps = "Done adding circles";
+            } else {
+                fps = std::to_string(1 / dt);
+                GravitySystem::Run(GravitySystem::Config{
+                        .Ecs=ecs,
+                        .dt=dt
+                });
+                DiscreteCollisionSystem::Run(DiscreteCollisionSystem::Config{
+                        .Ecs=ecs,
+                        .worldBoundrarys=worldBoundrarys,
+                        .dt=dt,
+                        .Lines=lines
+                });
             }
-            fps = std::to_string(1 / dt);
-            GravitySystem::Run(GravitySystem::Config{
-                    .Ecs=ecs,
-                    .dt=dt
-            });
-            /*
-            ContinousCollisionSystem::Run(ContinousCollisionSystem::Config{
-                    .Ecs=ecs,
-                    .worldBoundrarys=worldBoundrarys,
-                    .dt=dt
-            });
-             */
-            DiscreteCollisionSystem::Run(DiscreteCollisionSystem::Config{
-                    .Ecs=ecs,
-                    .worldBoundrarys=worldBoundrarys,
-                    .dt=dt,
-                    .Lines=lines
-            });
         }
         RenderSystem::Run(RenderSystem::Config{
                 .FpsText=fps,
@@ -149,7 +163,8 @@ int main() {
                 .nrPoints=nrPoints,
                 .Ecs=ecs,
                 .worldBoundrarys=worldBoundrarys,
-                .hoveredId=selected.value_or(hoveredId)
+                .hoveredId=selected.value_or(hoveredId),
+                .lines=lines
         });
         if (step) {
             pause = true;

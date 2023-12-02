@@ -16,23 +16,33 @@ void RenderSystem::Run(const Config &config) {
     std::vector<ecs::EntityID> entitiesToRemove;
     std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position
                                                               : std::optional<sf::Vector2f>();
-    for (const auto &[shape, verlet, id, query]: config.Ecs.GetSystem<sf::CircleShape, Verlet, ecs::EntityID, octreeQuery>()) {
-        shape.setPosition(verlet.Position);
+    std::vector<sf::Vertex> points;
+    points.reserve(config.Ecs.Size());
+
+    for (const auto &[shape, circle, verlet, id, query]: config.Ecs.GetSystem<sf::CircleShape, Circle, Verlet, ecs::EntityID, octreeQuery>()) {
+        sf::Vertex point;
+        point.position = verlet.Position;
+        //shape.setPosition(verlet.Position);
         if (id == config.hoveredId) {
-            shape.setFillColor(sf::Color::Red);
+            //shape.setFillColor(sf::Color::Red);
+            point.color = sf::Color::Red;
         } else {
             if (hoveredPos) {
                 auto distance = sf::distance(verlet.Position, *hoveredPos);
                 if (distance <= shape.getRadius() + queryRadius) {
-                    shape.setFillColor(sf::Color::Green);
+                    //shape.setFillColor(sf::Color::Green);
+                    point.color = sf::Color::Green;
                 } else {
-                    shape.setFillColor(sf::Color::Cyan);
+                    //shape.setFillColor(circle.Color);
+                    point.color = circle.Color;
                 }
             } else {
-                shape.setFillColor(sf::Color::Cyan);
+                //shape.setFillColor(circle.Color);
+                point.color = circle.Color;
             }
         }
-        config.Window.draw(shape);
+        //config.Window.draw(shape);
+        points.push_back(point);
         if (id == config.hoveredId) {
             sf::CircleShape outline;
             auto radius = shape.getRadius();
@@ -81,6 +91,15 @@ void RenderSystem::Run(const Config &config) {
             entitiesToRemove.push_back(id);
         }
     }
+    config.Window.draw(points.data(), points.size(), sf::Points);
+
+    for (const auto& line : config.lines) {
+        sf::Vertex lineShape[] = {
+                sf::Vertex(line.Start),
+                sf::Vertex(line.End)
+        };
+        config.Window.draw(lineShape, 2, sf::Lines);
+    }
 
     config.fpsText.setString(config.FpsText);
     config.nrPoints.setString(std::to_string(config.Ecs.Size()));
@@ -102,15 +121,28 @@ void GravitySystem::Run(const Config &config) {
 }
 
 void ResolveCollisions(const DiscreteCollisionSystem::Config &config, float dt) {
-    static int i = 5;
-    i++;
-    if (i >= 5) {
+    static bool first = true;
+    if (first) {
         auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
         for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, octreeQuery>()) {
             octreeQuery = octree.Query(
                     Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
         }
-        i = 0;
+        first = false;
+    }
+    else {
+        static int i = 0;
+        if (i > 3) {
+            auto a1 = std::async(std::launch::async, [&]() {
+                auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+                for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, octreeQuery>()) {
+                    octreeQuery = octree.Query(
+                            Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+                }
+            });
+            i = 0;
+        }
+        i++;
     }
     float dtPart = dt / nrIterations;
     for (int i = 0; i < nrIterations; i++) {

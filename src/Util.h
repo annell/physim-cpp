@@ -23,7 +23,7 @@ using Lines = std::vector<Line>;
 static constexpr float circleRadius = 2.0f;
 static constexpr float queryRadius = 3.0f * circleRadius;
 static constexpr int nrIterations = 1;
-static constexpr int nrCircles = 16000;
+static constexpr int nrCircles = 20000;
 
 float RandomFloat(float min, float max);
 

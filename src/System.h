@@ -23,6 +23,7 @@ namespace RenderSystem {
         ECS &Ecs;
         WorldBoundrarys &worldBoundrarys;
         ecs::EntityID hoveredId;
+        Lines& lines;
     };
 
     void Run(const Config &);

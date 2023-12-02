@@ -9,6 +9,7 @@
 
 struct Circle {
     float Radius = 10.0;
+    sf::Color Color = sf::Color::Cyan;
 };
 
 struct Line {
