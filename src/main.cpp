@@ -9,22 +9,13 @@
 #include <SFMLMath.hpp>
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
-    auto shape = sf::CircleShape(circleRadius);
-    float radius = shape.getRadius();
-    auto midX = worldBoundrarys.Position.x + worldBoundrarys.Size.x / 2;
-    auto midY = worldBoundrarys.Position.y + worldBoundrarys.Size.y / 2;
-    shape.setPosition(midX, midY);
-    shape.setFillColor(RandomColor());
     auto pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20), RandomFloat(20, worldBoundrarys.Size.y - 20)};
-    shape.setPosition(pos);
-    shape.setOrigin(shape.getRadius(), shape.getRadius());
     while (true) {
         bool collision = false;
-        for (const auto &[shape2]: ecs.template GetSystem<sf::CircleShape>()) {
-            if (Overlapp(shape, shape2)) {
+        for (const auto &[circle, verlet]: ecs.template GetSystem<Circle, Verlet>()) {
+            if (Overlapp(verlet.Position, pos, circle.Radius, circleRadius)) {
                 pos = sf::Vector2f{RandomFloat(20, worldBoundrarys.Size.x - 20),
                                    RandomFloat(20, worldBoundrarys.Size.y - 20)};
-                shape.setPosition(pos);
                 collision = true;
                 break;
             }
@@ -34,8 +25,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
         }
     }
     ecs.BuildEntity(
-            std::move(shape),
-            Circle{.Radius=radius, .Color=shape.getFillColor()},
+            Circle{.Radius=circleRadius, .Color=RandomColor()},
             Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos},
             octreeQuery{}
     );
@@ -89,8 +79,8 @@ int main() {
     controls.RegisterEvent(sf::Event::MouseMoved, [&](auto e) {
         auto pos = sf::Vector2f{static_cast<float>(e.mouseMove.x), static_cast<float>(e.mouseMove.y)};
         hoveredId = ecs::EntityID();
-        for (const auto &[id, shape]: ecs.template GetSystem<ecs::EntityID, sf::CircleShape>()) {
-            if (sf::distance(pos, shape.getPosition()) < shape.getRadius()) {
+        for (const auto &[id, circle, verlet]: ecs.template GetSystem<ecs::EntityID, Circle, Verlet>()) {
+            if (sf::distance(pos, verlet.Position) < circle.Radius) {
                 hoveredId = id;
                 break;
             }

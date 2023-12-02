@@ -17,7 +17,7 @@ struct vec {
 };
 
 using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
-using ECS = ecs::ECSManager<sf::CircleShape, Circle, Verlet, ecs::EntityID, octreeQuery>;
+using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery>;
 
 using Lines = std::vector<Line>;
 static constexpr float circleRadius = 2.0f;

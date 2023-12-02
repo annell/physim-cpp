@@ -19,33 +19,27 @@ void RenderSystem::Run(const Config &config) {
     std::vector<sf::Vertex> points;
     points.reserve(config.Ecs.Size());
 
-    for (const auto &[shape, circle, verlet, id, query]: config.Ecs.GetSystem<sf::CircleShape, Circle, Verlet, ecs::EntityID, octreeQuery>()) {
+    for (const auto &[circle, verlet, id, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
         sf::Vertex point;
         point.position = verlet.Position;
-        //shape.setPosition(verlet.Position);
+        auto radius = circle.Radius;
         if (id == config.hoveredId) {
-            //shape.setFillColor(sf::Color::Red);
             point.color = sf::Color::Red;
         } else {
             if (hoveredPos) {
                 auto distance = sf::distance(verlet.Position, *hoveredPos);
-                if (distance <= shape.getRadius() + queryRadius) {
-                    //shape.setFillColor(sf::Color::Green);
+                if (distance <= radius + queryRadius) {
                     point.color = sf::Color::Green;
                 } else {
-                    //shape.setFillColor(circle.Color);
                     point.color = circle.Color;
                 }
             } else {
-                //shape.setFillColor(circle.Color);
                 point.color = circle.Color;
             }
         }
-        //config.Window.draw(shape);
         points.push_back(point);
         if (id == config.hoveredId) {
             sf::CircleShape outline;
-            auto radius = shape.getRadius();
             outline.setRadius(radius + queryRadius);
             outline.setOrigin(radius + queryRadius, radius + queryRadius);
             outline.setPosition(verlet.Position);
@@ -59,8 +53,7 @@ void RenderSystem::Run(const Config &config) {
             for (const auto &testPoint: query) {
                 const auto &id2 = testPoint.Data;
                 if (id != id2) {
-                    auto &shape = config.Ecs.Get<sf::CircleShape>(id2);
-                    shape.setFillColor(sf::Color::Green);
+                    auto &circle2 = config.Ecs.Get<Circle>(id2);
                     auto &verlet2 = config.Ecs.Get<Verlet>(id2);
                     // Draw line between the two points
                     sf::Vertex line[] = {
@@ -70,7 +63,7 @@ void RenderSystem::Run(const Config &config) {
                     config.Window.draw(line, 2, sf::Lines);
                     minDistance = std::min(minOverlapp.value_or(1000.0f), sf::distance(verlet.Position, verlet2.Position));
                     minOverlapp = std::min(minOverlapp.value_or(1000.0f),
-                                           sf::distance(verlet.Position, verlet2.Position) - (radius + shape.getRadius()));
+                                           sf::distance(verlet.Position, verlet2.Position) - (radius + circle2.Radius));
                 }
             }
             sf::Text idText;
