@@ -6,6 +6,7 @@
 
 #include "SFML/Graphics.hpp"
 #include <SFMLMath.hpp>
+#include <octree-cpp/OctreeCpp.h>
 
 struct Circle {
     float Radius = 10.0;
@@ -37,6 +38,37 @@ struct Verlet {
     void Update(float dt) {
         MaxVelocity(100.0f);
         Position += Velocity * dt;
+    }
+};
+
+struct vec {
+    float x, y, z = 0;
+
+    auto operator<=>(const vec &rhs) const = default;
+};
+
+struct OctreeSwitch {
+    using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
+    bool UpdatingOne = false;
+    octreeQuery Query1;
+    octreeQuery Query2;
+
+    const octreeQuery& GetUsableQuery() const {
+        if (UpdatingOne) {
+            return Query2;
+        }
+        return Query1;
+    }
+
+    octreeQuery& GetUpdatingQuery() {
+        if (UpdatingOne) {
+            return Query1;
+        }
+        return Query2;
+    }
+
+    void Switch() {
+        UpdatingOne = !UpdatingOne;
     }
 };
 

@@ -113,11 +113,10 @@ double PointSegmentDistanceSquared(double px, double py,
 }
 
 
-double SegmentSegmentDistanceSquared(double p1x, double p1y,
+inline double SegmentSegmentDistanceSquared(double p1x, double p1y,
                                      double p2x, double p2y,
                                      double p3x, double p3y,
-                                     double p4x, double p4y,
-                                     float &qx, float &qy) {
+                                     double p4x, double p4y) {
     // check to make sure both segments are long enough (i.e. verts are farther apart than minimum allowed vert distance).
     // If 1 or both segments are shorter than this min length, treat them as a single point.
     double segLen12Squared = PointToPointDistanceSquared(p1x, p1y, p2x, p2y);
@@ -126,6 +125,8 @@ double SegmentSegmentDistanceSquared(double p1x, double p1y,
     double minDist2 = 1E+38;
     float tmpQx, tmpQy = 0;
     float tmpD2 = 0;
+    float qx = 0.0f;
+    float qy = 0.0f;
     if (segLen12Squared <= EPSILON_MIN_VERTEX_DISTANCE_SQUARED) {
         qx = p1x;
         qy = p1y;
@@ -204,8 +205,7 @@ double SegmentSegmentDistanceSquared(double p1x, double p1y,
 }
 
 double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L1End, const sf::Vector2f &L2Start,
-                              const sf::Vector2f &L2End, sf::Vector2f &Out) {
-    return std::sqrt(
-            SegmentSegmentDistanceSquared(L1Start.x, L1Start.y, L1End.x, L1End.y, L2Start.x, L2Start.y, L2End.x,
-                                          L2End.y, Out.x, Out.y));
+                              const sf::Vector2f &L2End) {
+    return SegmentSegmentDistanceSquared(L1Start.x, L1Start.y, L1End.x, L1End.y, L2Start.x, L2Start.y, L2End.x,
+                                          L2End.y);
 }

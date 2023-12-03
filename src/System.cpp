@@ -9,6 +9,7 @@
 #include <cassert>
 #include <SFMLMath.hpp>
 #include <future>
+#include <chrono>
 
 constexpr float PI_VertexPerCircle() {
     return M_PI / vertexPerCircle;
@@ -43,7 +44,7 @@ void RenderSystem::Run(const Config &config) {
     sf::VertexArray points(sf::Triangles);
     points.resize(config.Ecs.Size() * vertexPerCircle);
 
-    for (const auto &[circle, verlet, id, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
+    for (const auto &[circle, verlet, id, octreeSwitch]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, OctreeSwitch>()) {
         auto radius = circle.Radius;
         sf::Color color;
         if (id == config.hoveredId) {
@@ -73,7 +74,7 @@ void RenderSystem::Run(const Config &config) {
             config.Window.draw(outline);
             std::optional<float> minDistance;
             std::optional<float> minOverlapp;
-            for (const auto &testPoint: query) {
+            for (const auto &testPoint: octreeSwitch.GetUsableQuery()) {
                 const auto &id2 = testPoint.Data;
                 if (id != id2) {
                     auto &circle2 = config.Ecs.Get<Circle>(id2);
@@ -136,43 +137,47 @@ void GravitySystem::Run(const Config &config) {
     }
 }
 
-void UpdateQuery(const DiscreteCollisionSystem::Config &config) {
+std::optional<std::future<void>> UpdateQuery(const DiscreteCollisionSystem::Config &config) {
     static bool first = true;
     if (first) {
         auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-        for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, octreeQuery>()) {
-            octreeQuery = octree.Query(
+        for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, OctreeSwitch>()) {
+            octreeQuery.Query1 = octree.Query(
                     Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
         }
         first = false;
+        return std::nullopt;
     }
-    else {
-        static int i = 0;
-        if (i > 3) {
-            auto a = std::async(std::launch::async, [&]() {
-                auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-                for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, octreeQuery>()) {
-                    octreeQuery = octree.Query(
-                            Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
-                }
-            });
-            i = 0;
+
+    auto a = std::async(std::launch::async, [&]() {
+        auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+        for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, OctreeSwitch>()) {
+            auto& query = octreeQuery.GetUpdatingQuery();
+            query = octree.Query(
+                    Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+            octreeQuery.Switch();
         }
-        i++;
-    }
+    });
+    return a;
 }
 
 void DiscreteCollisionSystem::Run(const Config &config) {
-    UpdateQuery(config);
+    static std::optional<std::future<void>> a;
+    if (!a) {
+        a = UpdateQuery(config);
+    } else {
+        a->wait();
+        a = UpdateQuery(config);
+    }
     float dtPart = config.dt / nrIterations;
     for (int i = 0; i < nrIterations; i++) {
-        for (const auto [circle1, verlet1, id1, query]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
+        for (const auto [circle1, verlet1, id1, octreeSwitch]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, OctreeSwitch>()) {
             verlet1.PreviousPosition = verlet1.Position;
             verlet1.Update(dtPart);
             sf::Vector2f avgDirection;
             sf::Vector2f avgVelocity;
             bool collision = false;
-            for (const auto &testPoint: query) {
+            for (const auto &testPoint: octreeSwitch.GetUsableQuery()) {
                 const auto &id2 = testPoint.Data;
                 if (id1 == id2) {
                     continue;
@@ -198,13 +203,11 @@ void DiscreteCollisionSystem::Run(const Config &config) {
                 verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
             }
             for (const auto& line: config.Lines) {
-                float t = 1.0f;
-                if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line, t)) {
+                if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line)) {
                     continue;
                 }
                 auto [verlet1, circle1] = config.Ecs.GetSeveral<Verlet, Circle>(id1);
-                auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius);
-                if (overlapp) {
+                if (auto overlapp = Overlapp(line, verlet1.Position, circle1.Radius)) {
                     verlet1.Position -= line.Normal * *overlapp * 1.0f;
                 }
                 verlet1.Velocity -= sf::reflect(verlet1.Velocity, line.Normal) * verlet1.Bounciness;

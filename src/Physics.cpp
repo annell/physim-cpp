@@ -29,8 +29,7 @@ std::optional<float> Overlapp(const sf::Vector2f &pos1, const sf::Vector2f &pos2
 }
 
 std::optional<float> Overlapp(const Line &line, const sf::Vector2f &position, float radius) {
-    sf::Vector2f _;
-    auto overlapp = radius - SegmentSegmentDistance(line.Start, line.End, position, position, _);
+    auto overlapp = radius - SegmentSegmentDistance(line.Start, line.End, position, position);
     if (overlapp > 0) {
         return overlapp;
     }
@@ -41,17 +40,10 @@ std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleSh
     return Overlapp(circle1.getPosition(), circle2.getPosition(), circle1.getRadius(), circle2.getRadius());
 }
 
-bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0) {
-    sf::Vector2f closestPoint;
-    auto dist = std::abs(SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End, closestPoint));
+bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line) {
+    auto dist = std::abs(SegmentSegmentDistance(verlet.PreviousPosition, verlet.Position, line.Start, line.End));
 
-    if (dist >= radius) {
-        u0 = 1.0f;
-        return false;
-    } else {
-        u0 = sf::distance(verlet.PreviousPosition, closestPoint) / sf::distance(verlet.PreviousPosition, verlet.Position);
-        return true;
-    }
+    return dist < radius * radius;
 }
 
 sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B) {

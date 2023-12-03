@@ -5,24 +5,16 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <octree-cpp/OctreeCpp.h>
 #include <ecs-cpp/EcsCpp.h>
 #include <optional>
 #include "Components.h"
 
-struct vec {
-    float x, y, z = 0;
-
-    auto operator<=>(const vec &rhs) const = default;
-};
-
-using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
-using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery>;
+using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, OctreeSwitch>;
 
 using Lines = std::vector<Line>;
-static constexpr float circleRadius = 2.0f;
+static constexpr float circleRadius = 1.0f;
 static constexpr float queryRadius = 3.0f * circleRadius;
-static constexpr int nrIterations = 1;
+static constexpr int nrIterations = 4;
 static constexpr int nrCircles = 20000;
 static constexpr int vertexPerCircle = 3;
 
@@ -42,4 +34,4 @@ using Octree = OctreeCpp<vec, ecs::EntityID>;
 Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys);
 
 double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L1End, const sf::Vector2f &L2Start,
-                              const sf::Vector2f &L2End, sf::Vector2f &Out);
+                              const sf::Vector2f &L2End);

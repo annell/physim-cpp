@@ -27,6 +27,6 @@ std::optional<float> Overlapp(const Line &l1, const sf::Vector2f &pos, float rad
 
 std::optional<float> Overlapp(const sf::CircleShape &circle1, const sf::CircleShape &circle2);
 
-bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line, float &u0);
+bool IntersectMovingCircleLine(float radius, const Verlet &verlet, const Line &line);
 
 sf::Vector2f UpdateCircleVelocity(Verlet &A, Verlet &B);
