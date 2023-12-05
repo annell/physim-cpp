@@ -8,14 +8,16 @@
 #include <ecs-cpp/EcsCpp.h>
 #include <optional>
 #include "Components.h"
+#include <future>
+#include <chrono>
 
-using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, OctreeSwitch>;
+using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery>;
 
 using Lines = std::vector<Line>;
 static constexpr float circleRadius = 1.0f;
-static constexpr float queryRadius = 3.0f * circleRadius;
-static constexpr int nrIterations = 4;
-static constexpr int nrCircles = 20000;
+static constexpr float queryRadius = 1.0f * circleRadius;
+static constexpr int nrIterations = 2;
+static constexpr int nrCircles = 30000;
 static constexpr int vertexPerCircle = 3;
 
 float RandomFloat(float min, float max);
@@ -35,3 +37,9 @@ Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys);
 
 double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L1End, const sf::Vector2f &L2Start,
                               const sf::Vector2f &L2End);
+
+template<typename R>
+bool is_ready(std::future<R> const& f)
+{
+    return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}

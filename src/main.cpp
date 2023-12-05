@@ -27,7 +27,7 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     ecs.BuildEntity(
             Circle{.Radius=circleRadius, .Color=RandomColor()},
             Verlet{pos, {0, 0}, {RandomFloat(-10.1, 10.1), RandomFloat(-10.1, 10.1)}, pos},
-            OctreeSwitch{}
+            octreeQuery{}
     );
 }
 

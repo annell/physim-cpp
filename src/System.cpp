@@ -8,8 +8,6 @@
 #include <iostream>
 #include <cassert>
 #include <SFMLMath.hpp>
-#include <future>
-#include <chrono>
 
 constexpr float PI_VertexPerCircle() {
     return M_PI / vertexPerCircle;
@@ -44,7 +42,7 @@ void RenderSystem::Run(const Config &config) {
     sf::VertexArray points(sf::Triangles);
     points.resize(config.Ecs.Size() * vertexPerCircle);
 
-    for (const auto &[circle, verlet, id, octreeSwitch]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, OctreeSwitch>()) {
+    for (const auto &[circle, verlet, id, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
         auto radius = circle.Radius;
         sf::Color color;
         if (id == config.hoveredId) {
@@ -74,7 +72,7 @@ void RenderSystem::Run(const Config &config) {
             config.Window.draw(outline);
             std::optional<float> minDistance;
             std::optional<float> minOverlapp;
-            for (const auto &testPoint: octreeSwitch.GetUsableQuery()) {
+            for (const auto &testPoint: octreeQuery) {
                 const auto &id2 = testPoint.Data;
                 if (id != id2) {
                     auto &circle2 = config.Ecs.Get<Circle>(id2);
@@ -137,47 +135,59 @@ void GravitySystem::Run(const Config &config) {
     }
 }
 
-std::optional<std::future<void>> UpdateQuery(const DiscreteCollisionSystem::Config &config) {
+void UpdateQuery(const DiscreteCollisionSystem::Config &config) {
+    auto start = std::chrono::high_resolution_clock::now();
     static bool first = true;
-    if (first) {
-        auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-        for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, OctreeSwitch>()) {
-            octreeQuery.Query1 = octree.Query(
-                    Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
-        }
-        first = false;
-        return std::nullopt;
+    static int n = 0;
+    static std::future<void> future;
+    n++;
+    if (first || is_ready(future)) {
+        n = 0;
+        future = std::async(std::launch::async, [&](){
+            auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+            std::vector<std::future<void>> futures;
+            int maxParts = 2;
+            std::mutex mutex;
+            for (int i = 0; i < maxParts; i++) {
+                futures.push_back(std::async(std::launch::async, [&, system=config.Ecs.GetSystemPart<Circle, Verlet, octreeQuery>(i, maxParts)]() {
+                    for (auto [circle, verlet, octreeQuery]: system) {
+                        auto queryResults = octree.Query(
+                                Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+                        if (!queryResults.empty()) {
+                            std::lock_guard<std::mutex> lock(mutex);
+                            octreeQuery = queryResults;
+                        }
+                    }
+                }));
+            }
+            for (auto& future: futures) {
+                future.wait();
+            }
+        });
     }
-
-    auto a = std::async(std::launch::async, [&]() {
-        auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
-        for (const auto &[circle, verlet, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, OctreeSwitch>()) {
-            auto& query = octreeQuery.GetUpdatingQuery();
-            query = octree.Query(
-                    Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
-            octreeQuery.Switch();
-        }
-    });
-    return a;
+    if (first) {
+        future.wait();
+        first = false;
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> diff = end-start;
+    std::cout << "Time spent waiting: " << diff.count() << " seconds" << std::endl;
+    std::cout << "Iterations: " << n << std::endl;
 }
 
 void DiscreteCollisionSystem::Run(const Config &config) {
-    static std::optional<std::future<void>> a;
-    if (!a) {
-        a = UpdateQuery(config);
-    } else {
-        a->wait();
-        a = UpdateQuery(config);
-    }
+
+    UpdateQuery(config);
+
     float dtPart = config.dt / nrIterations;
     for (int i = 0; i < nrIterations; i++) {
-        for (const auto [circle1, verlet1, id1, octreeSwitch]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, OctreeSwitch>()) {
+        for (const auto [circle1, verlet1, id1, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
             verlet1.PreviousPosition = verlet1.Position;
             verlet1.Update(dtPart);
             sf::Vector2f avgDirection;
             sf::Vector2f avgVelocity;
             bool collision = false;
-            for (const auto &testPoint: octreeSwitch.GetUsableQuery()) {
+            for (const auto &testPoint: octreeQuery) {
                 const auto &id2 = testPoint.Data;
                 if (id1 == id2) {
                     continue;

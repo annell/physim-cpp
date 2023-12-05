@@ -47,8 +47,8 @@ struct vec {
     auto operator<=>(const vec &rhs) const = default;
 };
 
+using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
 struct OctreeSwitch {
-    using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
     bool UpdatingOne = false;
     octreeQuery Query1;
     octreeQuery Query2;
