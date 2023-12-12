@@ -14,11 +14,12 @@
 using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery>;
 
 using Lines = std::vector<Line>;
-static constexpr float circleRadius = 1.0f;
+static constexpr float circleRadius = 1.5f;
 static constexpr float queryRadius = 1.0f * circleRadius;
 static constexpr int nrIterations = 2;
-static constexpr int nrCircles = 30000;
+static constexpr int nrCircles = 40000;
 static constexpr int vertexPerCircle = 3;
+static constexpr bool pointRendering = true;
 
 float RandomFloat(float min, float max);
 

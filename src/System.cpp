@@ -34,23 +34,29 @@ void addCircle(sf::VertexArray &array, sf::Vector2f position, float radius, sf::
     }
 }
 
+void addPoint(sf::VertexArray &array, sf::Vector2f position, sf::Color color) {
+    sf::Vertex v0;
+    v0.position = sf::Vector2f(position.x, position.y);
+    v0.color = color;
+    array.append(v0);
+}
+
 void RenderSystem::Run(const Config &config) {
     config.Window.clear();
     std::vector<ecs::EntityID> entitiesToRemove;
     std::optional<sf::Vector2f> hoveredPos = config.hoveredId ? config.Ecs.Get<Verlet>(config.hoveredId).Position
                                                               : std::optional<sf::Vector2f>();
-    sf::VertexArray points(sf::Triangles);
-    points.resize(config.Ecs.Size() * vertexPerCircle);
+    sf::VertexArray points(pointRendering ? sf::Points : sf::Triangles);
+    points.resize(config.Ecs.Size());
 
     for (const auto &[circle, verlet, id, octreeQuery]: config.Ecs.GetSystem<Circle, Verlet, ecs::EntityID, octreeQuery>()) {
-        auto radius = circle.Radius;
         sf::Color color;
         if (id == config.hoveredId) {
             color = sf::Color::Red;
         } else {
             if (hoveredPos) {
                 auto distance = sf::distance(verlet.Position, *hoveredPos);
-                if (distance <= radius + queryRadius) {
+                if (distance <= circle.Radius + queryRadius) {
                     color = sf::Color::Green;
                 } else {
                     color = circle.Color;
@@ -59,11 +65,15 @@ void RenderSystem::Run(const Config &config) {
                 color = circle.Color;
             }
         }
-        addCircle(points, verlet.Position, radius, color);
+        if (pointRendering) {
+            addPoint(points, verlet.Position, color);
+        } else {
+            addCircle(points, verlet.Position, circle.Radius, color);
+        }
         if (id == config.hoveredId) {
             sf::CircleShape outline;
-            outline.setRadius(radius + queryRadius);
-            outline.setOrigin(radius + queryRadius, radius + queryRadius);
+            outline.setRadius(circle.Radius + queryRadius);
+            outline.setOrigin(circle.Radius + queryRadius, circle.Radius + queryRadius);
             outline.setPosition(verlet.Position);
             outline.setFillColor(sf::Color::Transparent);
             outline.setOutlineColor(sf::Color::Red);
@@ -85,7 +95,7 @@ void RenderSystem::Run(const Config &config) {
                     config.Window.draw(line, 2, sf::Lines);
                     minDistance = std::min(minOverlapp.value_or(1000.0f), sf::distance(verlet.Position, verlet2.Position));
                     minOverlapp = std::min(minOverlapp.value_or(1000.0f),
-                                           sf::distance(verlet.Position, verlet2.Position) - (radius + circle2.Radius));
+                                           sf::distance(verlet.Position, verlet2.Position) - (circle.Radius + circle2.Radius));
                 }
             }
             sf::Text idText;
