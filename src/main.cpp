@@ -73,7 +73,7 @@ int main() {
         if (e.mouseButton.button == sf::Mouse::Left) {
             newLine.End = sf::Vector2f{static_cast<float>(e.mouseButton.x), static_cast<float>(e.mouseButton.y)};
             newLine.Normal = sf::normalBetweenPoints(newLine.Start, newLine.End);
-            lines.push_back(newLine);
+            ecs.BuildEntity(Line{newLine});
         }
     });
     controls.RegisterEvent(sf::Event::MouseMoved, [&](auto e) {
@@ -95,10 +95,10 @@ int main() {
     sf::Vector2f B = {worldBoundrarys.Size.x, 0};
     sf::Vector2f C = worldBoundrarys.Size;
     sf::Vector2f D = {0, worldBoundrarys.Size.y};
-    lines.push_back(Line{A, B, sf::normalBetweenPoints(A, B)});
-    lines.push_back(Line{B, C, sf::normalBetweenPoints(B, C)});
-    lines.push_back(Line{C, D, sf::normalBetweenPoints(C, D)});
-    lines.push_back(Line{D, A, sf::normalBetweenPoints(D, A)});
+    ecs.BuildEntity(Line{A, B, sf::normalBetweenPoints(A, B)});
+    ecs.BuildEntity(Line{B, C, sf::normalBetweenPoints(B, C)});
+    ecs.BuildEntity(Line{C, D, sf::normalBetweenPoints(C, D)});
+    ecs.BuildEntity(Line{D, A, sf::normalBetweenPoints(D, A)});
 
     sf::Text fpsText;
     fpsText.setFont(font);

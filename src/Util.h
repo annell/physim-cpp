@@ -11,7 +11,7 @@
 #include <future>
 #include <chrono>
 
-using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery>;
+using ECS = ecs::ECSManager<Circle, Verlet, ecs::EntityID, octreeQuery, Line>;
 
 using Lines = std::vector<Line>;
 static constexpr float circleRadius = 1.5f;

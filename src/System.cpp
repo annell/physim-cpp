@@ -117,13 +117,27 @@ void RenderSystem::Run(const Config &config) {
         }
     }
 
-    for (const auto& line : config.lines) {
+    for (const auto &[line]: config.Ecs.GetSystem<Line>()) {
         sf::Vertex lineShape[] = {
                 sf::Vertex(line.Start),
                 sf::Vertex(line.End)
         };
         config.Window.draw(lineShape, 2, sf::Lines);
     }
+
+    /*
+    auto octree = MakeOctree(config.Ecs, config.worldBoundrarys);
+    for (const auto& boundrary : octree.GetBoundaries()) {
+        sf::RectangleShape rectangle;
+        auto boundrarySize = boundrary.GetSize();
+        rectangle.setSize({boundrarySize.x, boundrarySize.y});
+        rectangle.setPosition({boundrary.Min.x, boundrary.Min.y});
+        rectangle.setFillColor(sf::Color::Transparent);
+        rectangle.setOutlineColor(sf::Color::White);
+        rectangle.setOutlineThickness(1);
+        config.Window.draw(rectangle);
+    }
+     */
 
     config.fpsText.setString(config.FpsText);
     config.nrPoints.setString(std::to_string(config.Ecs.Size()));
@@ -222,7 +236,7 @@ void DiscreteCollisionSystem::Run(const Config &config) {
                 auto length = sf::getLength(verlet1.Velocity);
                 verlet1.Velocity += sf::getNormalized(avgVelocity) * length;
             }
-            for (const auto& line: config.Lines) {
+            for (const auto& [line]: config.Ecs.GetSystem<Line>()) {
                 if (!IntersectMovingCircleLine(circle1.Radius, verlet1, line)) {
                     continue;
                 }
