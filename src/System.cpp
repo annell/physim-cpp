@@ -176,7 +176,7 @@ void UpdateQuery(const DiscreteCollisionSystem::Config &config) {
                 futures.push_back(std::async(std::launch::async, [&, system=config.Ecs.GetSystemPart<Circle, Verlet, octreeQuery>(i, maxParts)]() {
                     for (auto [circle, verlet, octreeQuery]: system) {
                         auto queryResults = octree.Query(
-                                Octree::Sphere{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
+                                Octree::Circle{{verlet.Position.x, verlet.Position.y}, circle.Radius + queryRadius});
                         if (!queryResults.empty()) {
                             std::lock_guard<std::mutex> lock(mutex);
                             octreeQuery = queryResults;

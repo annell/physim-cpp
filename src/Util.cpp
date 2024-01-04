@@ -15,8 +15,8 @@ sf::Color RandomColor() {
 }
 
 Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
-    Octree octree({{0,                      0,                      0},
-                   {worldBoundrarys.Size.x, worldBoundrarys.Size.y, 0}});
+    Octree octree({{0,                      0},
+                   {worldBoundrarys.Size.x, worldBoundrarys.Size.y}});
 
     for (const auto &[verlet, id]: ecs.GetSystem<Verlet, ecs::EntityID>()) {
         if (worldBoundrarys.GetBox().contains(verlet.Position)) {

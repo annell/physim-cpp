@@ -41,13 +41,7 @@ struct Verlet {
     }
 };
 
-struct vec {
-    float x, y, z = 0;
-
-    auto operator<=>(const vec &rhs) const = default;
-};
-
-using octreeQuery = std::vector<DataWrapper<vec, ecs::EntityID>>;
+using octreeQuery = std::vector<DataWrapper<sf::Vector2f, ecs::EntityID>>;
 struct OctreeSwitch {
     bool UpdatingOne = false;
     octreeQuery Query1;

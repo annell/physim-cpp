@@ -32,7 +32,7 @@ struct WorldBoundrarys {
     [[nodiscard]] sf::FloatRect GetBox() const { return {Position, Size}; }
 };
 
-using Octree = OctreeCpp<vec, ecs::EntityID>;
+using Octree = OctreeCpp<sf::Vector2f, ecs::EntityID>;
 
 Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys);
 
