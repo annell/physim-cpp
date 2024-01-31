@@ -26,9 +26,10 @@ add_executable(${PROJECT_NAME}_Utiltest
         ../Physics.h
         ../System.h
         ../Util.h
+        ../PhysimCpp.h
 )
-target_link_libraries(${PROJECT_NAME}_test GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp)
-target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp)
+target_link_libraries(${PROJECT_NAME}_test GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp SFMLMath)
+target_link_libraries(${PROJECT_NAME}_Utiltest GTest::gtest GTest::gtest_main sfml-graphics sfml-window ecs-cpp octree-cpp SFMLMath)
 
 include(GoogleTest)
 gtest_discover_tests(${PROJECT_NAME}_test)

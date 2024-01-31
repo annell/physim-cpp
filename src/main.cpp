@@ -6,6 +6,7 @@
 #include "System.h"
 #include "Physics.h"
 #include "Controls.h"
+#include "PhysimCpp.h"
 #include <SFMLMath.hpp>
 
 void AddCircle(auto &ecs, auto &worldBoundrarys) {
@@ -31,6 +32,17 @@ void AddCircle(auto &ecs, auto &worldBoundrarys) {
     );
 }
 
+void AddBoundingBox(auto &ecs, auto &worldBoundrarys) {
+    sf::Vector2f A = {0, 0};
+    sf::Vector2f B = {worldBoundrarys.Size.x, 0};
+    sf::Vector2f C = worldBoundrarys.Size;
+    sf::Vector2f D = {0, worldBoundrarys.Size.y};
+    ecs.BuildEntity(Line{A, B, sf::normalBetweenPoints(A, B)});
+    ecs.BuildEntity(Line{B, C, sf::normalBetweenPoints(B, C)});
+    ecs.BuildEntity(Line{C, D, sf::normalBetweenPoints(C, D)});
+    ecs.BuildEntity(Line{D, A, sf::normalBetweenPoints(D, A)});
+}
+
 int main() {
     WorldBoundrarys worldBoundrarys{{0,   0},
                                     {1200, 700}};
@@ -43,6 +55,7 @@ int main() {
     ecs::EntityID hoveredId;
 
     ECS ecs;
+    PhysimCpp physimCpp(ecs, worldBoundrarys);
     Controls controls;
     controls.RegisterEvent(sf::Event::Closed, [&sfmlWin](auto) { sfmlWin.close(); });
     controls.RegisterEvent(sf::Event::KeyPressed, [&](auto e) {
@@ -91,14 +104,7 @@ int main() {
     if (!font.loadFromFile(path.generic_string() + "/myfont.ttf")) {
         return -1;
     }
-    sf::Vector2f A = {0, 0};
-    sf::Vector2f B = {worldBoundrarys.Size.x, 0};
-    sf::Vector2f C = worldBoundrarys.Size;
-    sf::Vector2f D = {0, worldBoundrarys.Size.y};
-    ecs.BuildEntity(Line{A, B, sf::normalBetweenPoints(A, B)});
-    ecs.BuildEntity(Line{B, C, sf::normalBetweenPoints(B, C)});
-    ecs.BuildEntity(Line{C, D, sf::normalBetweenPoints(C, D)});
-    ecs.BuildEntity(Line{D, A, sf::normalBetweenPoints(D, A)});
+    AddBoundingBox(ecs, worldBoundrarys);
 
     sf::Text fpsText;
     fpsText.setFont(font);
@@ -138,12 +144,7 @@ int main() {
                         .Ecs=ecs,
                         .dt=dt
                 });
-                DiscreteCollisionSystem::Run(DiscreteCollisionSystem::Config{
-                        .Ecs=ecs,
-                        .worldBoundrarys=worldBoundrarys,
-                        .dt=dt,
-                        .Lines=lines
-                });
+                physimCpp.Run(dt);
             }
         }
         RenderSystem::Run(RenderSystem::Config{

@@ -34,7 +34,18 @@ struct WorldBoundrarys {
 
 using Octree = OctreeCpp<sf::Vector2f, ecs::EntityID>;
 
-Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys);
+Octree MakeOctree(auto &ecs, const WorldBoundrarys &worldBoundrarys) {
+    Octree octree({{0,                      0},
+                   {worldBoundrarys.Size.x, worldBoundrarys.Size.y}});
+
+    for (const auto &[verlet, id]: ecs.template GetSystem<Verlet, ecs::EntityID>()) {
+        if (worldBoundrarys.GetBox().contains(verlet.Position)) {
+            octree.Add({{verlet.Position.x, verlet.Position.y}, id});
+        }
+    }
+
+    return octree;
+}
 
 double SegmentSegmentDistance(const sf::Vector2f &L1Start, const sf::Vector2f &L1End, const sf::Vector2f &L2Start,
                               const sf::Vector2f &L2End);

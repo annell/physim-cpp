@@ -6,15 +6,25 @@
 #include "Util.h"
 #include <gtest/gtest.h>
 #include "SFML/System.hpp"
+#include "../PhysimCpp.h"
 
-/*
-TEST(UtilTests, Projection1) {
-    sf::Vector2f A = {0, 0};
-    sf::Vector2f B = {1, 0};
-    auto C = Projection(A, B);
-    ASSERT_FLOAT_EQ(C.x, 0.0);
-    ASSERT_FLOAT_EQ(C.y, 0.0);
+TEST(UtilTests, PhysimCompile) {
+    ecs::ECSManager<ecs::EntityID, Verlet, Line, Circle, octreeQuery> ecs;
+    PhysimCpp physim(ecs, WorldBoundrarys{{0, 0}, {100, 100}});
+    physim.Run(0.1f);
 }
+
+TEST(UtilTests, PhysimWontCompile) {
+    /*
+     * Missing EntityID and octreeQuery
+     */
+    ecs::ECSManager<Verlet, Line, Circle> ecs;
+    /*
+    PhysimCpp physim(ecs, WorldBoundrarys{{0, 0}, {100, 100}});
+    physim.Run(0.1f);
+    */
+}
+/*
 
 TEST(UtilTests, Projection2) {
     sf::Vector2f A = {1, 0.5};

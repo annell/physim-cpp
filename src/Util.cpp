@@ -14,18 +14,6 @@ sf::Color RandomColor() {
     return sf::Color(RandomFloat(0, 255), RandomFloat(0, 255), RandomFloat(0, 255));
 }
 
-Octree MakeOctree(ECS &ecs, const WorldBoundrarys &worldBoundrarys) {
-    Octree octree({{0,                      0},
-                   {worldBoundrarys.Size.x, worldBoundrarys.Size.y}});
-
-    for (const auto &[verlet, id]: ecs.GetSystem<Verlet, ecs::EntityID>()) {
-        if (worldBoundrarys.GetBox().contains(verlet.Position)) {
-            octree.Add({{verlet.Position.x, verlet.Position.y}, id});
-        }
-    }
-
-    return octree;
-}
 
 // minimum distance (squared) between vertices, i.e. minimum segment length (squared)
 #define EPSILON_MIN_VERTEX_DISTANCE_SQUARED 0.00000001

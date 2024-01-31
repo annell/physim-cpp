@@ -39,17 +39,6 @@ namespace ContinousCollisionSystem {
     void Run(const Config &);
 }
 
-namespace DiscreteCollisionSystem {
-    struct Config {
-        ECS &Ecs;
-        WorldBoundrarys &worldBoundrarys;
-        float dt = 0.0f;
-        Lines &Lines;
-    };
-
-    void Run(const Config &);
-}
-
 namespace GravitySystem {
     struct Config {
         ECS &Ecs;
